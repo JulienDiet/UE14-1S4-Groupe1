@@ -25,7 +25,7 @@ def start_net_serv(ip=LOCAL_IP, port=PORT_SERV_CLES):
 
 
 
-def connect_to_serv(ip=LOCAL_IP, port=PORT_SERV_CLES, retry=0):
+def connect_to_serv(ip=LOCAL_IP, port=PORT_SERV_CLES, retry=10):
     """
     Crée un socket qui tente de se connecter sur ip:port.
     En cas d'échec, tente une nouvelle connexion après retry secondes
