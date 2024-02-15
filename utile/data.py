@@ -1,7 +1,7 @@
 import sqlite3
 
 # Constantes
-DB_FILENAME = 'data/victims.sqlite'
+DB_FILENAME = './data/victims.sqlite'
 
 
 def connect_db():
@@ -9,6 +9,14 @@ def connect_db():
     Initialise la connexion vers la base de donnée
     :return: La connexion établie avec la base de donnée
     """
+    try:
+        # Establish a connection to the SQLite database
+        conn = sqlite3.connect(DB_FILENAME)
+        print("Connection successfully established.")
+        return conn
+    except sqlite3.Error as e:
+        print(f"An error occurred while connecting to the database: {e}")
+
 
 def insert_data(conn, table, items, data):
     """
@@ -19,6 +27,22 @@ def insert_data(conn, table, items, data):
     :param data: la valeur des champs à insérer
     :return: Néant
     """
+    # Construire l'instruction SQL INSERT INTO
+    # Utilise un espace réservé '?' pour chaque donnée afin d'insérer les données de manière sécurisée
+    sql = f"INSERT INTO {table} ({', '.join(items)}) VALUES ({', '.join(['?' for _ in data])})"
+
+    try:
+        # Créer un objet curseur en utilisant la connexion
+        cur = conn.cursor()
+        # Exécuter l'instruction INSERT INTO
+        cur.execute(sql, data)
+        # Valider la transaction
+        conn.commit()
+        print("Données insérées avec succès.")
+    except sqlite3.Error as e:
+        # Annuler la transaction en cas d'erreur
+        conn.rollback()
+        print(f"Une erreur s'est produite lors de l'insertion des données : {e}")
 
 
 def select_data(conn, select_query):
@@ -28,6 +52,19 @@ def select_data(conn, select_query):
     :param select_query: la requête du select à effectuer
     :return: les records correspondants au résultats du SELECT
     """
+    try:
+        # Créer un objet curseur en utilisant la connexion
+        cur = conn.cursor()
+        # Exécuter la requête SELECT
+        cur.execute(select_query)
+        # Récupérer tous les résultats
+        records = cur.fetchall()
+        print("Requête exécutée avec succès.")
+        return records
+    except sqlite3.Error as e:
+        print(f"Une erreur s'est produite lors de l'exécution de la requête SELECT : {e}")
+        return None
+
 
 def get_list_victims(conn):
     """
@@ -36,6 +73,21 @@ def get_list_victims(conn):
     :param conn: la connexion déjà établie à la base de donnée
     :return: La liste des victimes
     """
+    # Définir la requête SELECT pour récupérer les informations souhaitées sur les victimes
+    # Par exemple, récupérer les noms des victimes depuis une table 'victims'
+    select_query = "SELECT id_victim FROM victims"
+
+    # Utiliser la fonction select_data pour exécuter la requête
+    victims_records = select_data(conn, select_query)
+
+    if victims_records is not None:
+        print("Liste des victimes récupérée avec succès.")
+        # Retourner les enregistrements récupérés
+        return victims_records
+    else:
+        print("Impossible de récupérer la liste des victimes.")
+        return []
+
 
 
 def get_list_history(conn, id_victim):
@@ -45,3 +97,28 @@ def get_list_history(conn, id_victim):
     :param id_victim: l'identifiant de la victime
     :return: la liste de son historique
     """
+    # Définir la requête SELECT pour récupérer l'historique de la victime spécifiée
+    # Assurez-vous que la table et les colonnes correspondent à votre schéma de base de données
+    # Par exemple, récupérer des informations depuis une table 'history' où 'victim_id' correspond à id_victim
+    select_query = f"SELECT * FROM states WHERE id_victim = ?"
+
+    try:
+        # Créer un objet curseur en utilisant la connexion
+        cur = conn.cursor()
+        # Exécuter la requête SELECT avec le paramètre id_victim pour filtrer les résultats
+        cur.execute(select_query, (id_victim,))
+        # Récupérer tous les résultats
+        history_records = cur.fetchall()
+        print("Historique récupéré avec succès.")
+        # Retourner les enregistrements récupérés
+        return history_records
+    except sqlite3.Error as e:
+        print(f"Une erreur s'est produite lors de l'exécution de la requête SELECT : {e}")
+        return []
+
+
+
+
+
+
+
