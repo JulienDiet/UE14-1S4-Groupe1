@@ -63,7 +63,8 @@ def set_message(select_msg, params=None):
     if msg is not None:
         msg = msg.copy()
     if params is not None and msg is not None:
-        msg.update(params)
+        for key, value in params.items():
+            msg[key] = value
     return msg
 
 
@@ -74,6 +75,5 @@ def get_message_type(message):
     :return: une chaine correspondant au nom du message comme définit par le protocole
     """
     for key, value in MESSAGE_TYPE.items():
-        if message is value:
+        if message == value:
             return key
-    return None
