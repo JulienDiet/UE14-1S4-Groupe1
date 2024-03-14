@@ -41,20 +41,21 @@ def main():
         type_message = message.get_message_type(msg1)
         if type_message == "LIST_REQ":
             victims = data.get_list_victims(conn)
-            for victim in victims:
-                print(victim)
+            # Envoi de la réponse
             message_response = message.set_message("LIST_RESP", {"victims": victims})
             print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
             network.send_message(client_socket, message_response)
             print("Message envoyé")
-
-
-            # Select dans la bd, pour chaque victime on cree le list_victim respond, on les envoie (un par un) et set message et on envoit un par un)
-
-            message_response = message.set_message("LIST_VICTIM_RESP", data.get_list_victims(conn))
+        elif type_message == "HISTORY_REQ":
+            # Récupérer l'historique
+            victim = msg1['victim']
+            history = data.get_list_history(conn, victim)
+            # Envoi de la réponse
+            message_response = message.set_message("HISTORY_RESP", {"victim": victim, "history": history})
             print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
             network.send_message(client_socket, message_response)
             print("Message envoyé")
+
         else:
             print("Aucun message à envoyer.")
         client_socket.close()

@@ -75,7 +75,7 @@ def get_list_victims(conn):
     """
     # Définir la requête SELECT pour récupérer les informations souhaitées sur les victimes
     # Par exemple, récupérer les noms des victimes depuis une table 'victims'
-    select_query = "SELECT id_victim FROM victims"
+    select_query = "SELECT * FROM victims"
 
     # Utiliser la fonction select_data pour exécuter la requête
     victims_records = select_data(conn, select_query)

