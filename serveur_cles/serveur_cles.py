@@ -42,7 +42,7 @@ def main():
         if type_message == "LIST_REQ":
             victims = data.get_list_victims(conn)
             # Envoi de la réponse
-            message_response = message.set_message("LIST_RESP", {"victims": victims})
+            message_response = message.set_message("LIST_VICTIM_RESP", {"victims": victims})
             print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
             network.send_message(client_socket, message_response)
             print("Message envoyé")

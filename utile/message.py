@@ -59,10 +59,15 @@ def set_message(select_msg, params=None):
         'HISTORY_END': HISTORY_END,
         'CHANGE_STATE': CHANGE_STATE,
     }
+    msg = messages[select_msg]
     if params is not None:
-        messages[select_msg] = params
-    return messages[select_msg]
-
+        keys = list(msg.keys())
+        for i, param in enumerate(params):
+            if i < len(keys):
+                msg[keys[i]] = param
+            else:
+                break
+    return msg
 
 
 def get_message_type(message):
