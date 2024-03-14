@@ -59,12 +59,10 @@ def set_message(select_msg, params=None):
         'HISTORY_END': HISTORY_END,
         'CHANGE_STATE': CHANGE_STATE,
     }
-    msg = messages.get(select_msg.upper(), None)
-    if msg is not None:
-        msg = msg.copy()
-    if params is not None and msg is not None:
-        msg.update(params)
-    return msg
+    if params is not None:
+        messages[select_msg] = params
+    return messages[select_msg]
+
 
 
 def get_message_type(message):
@@ -74,6 +72,6 @@ def get_message_type(message):
     :return: une chaine correspondant au nom du message comme définit par le protocole
     """
     for key, value in MESSAGE_TYPE.items():
-        if message is value:
+        if message == value:
             return key
     return None
