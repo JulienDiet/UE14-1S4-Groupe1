@@ -7,6 +7,7 @@ from hashlib import sha256
 import utile.network as network
 import pickle
 
+
 def aes_encrypt(msg, key):
     """
     Fonction de chiffrement AES-GCM
@@ -23,6 +24,7 @@ def aes_decrypt(msg, key):
     :return: (dict) Message déchiffré sous forme de dictionnaire
     """
 
+
 def gen_key(size=256):
     """
     Fonction générant une clé de chiffrement
@@ -30,12 +32,14 @@ def gen_key(size=256):
     :return: (bytes) nouvelle clé de chiffrement
     """
 
+
 def diffie_hellman_send_key(s_client):
     """
     Fonction d'échange de clé via le protocole de Diffie Hellman
     :param s_client: (socket) Connexion TCP du client avec qui échanger les clés
     :return: (bytes) Clé de 256 bits calculée
     """
+
 
 def diffie_hellman_recv_key(s_serveur):
     """
