@@ -52,7 +52,7 @@ def affichage_historique_etat_victimes():
     print("HISTORIQUE DES ETATS D'UNE VICTIME")
     print("============================================================================")
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
-    msg = message.set_message("LIST_VICTIM_REQ")
+    msg = message.set_message("HISTORY_REQ")
     network.send_message(s, msg)
     response = network.receive_message(s)
     if response is None:
