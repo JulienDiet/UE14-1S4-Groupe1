@@ -41,17 +41,24 @@ def main():
         type_message = message.get_message_type(msg1)
         if type_message == "LIST_REQ":
             victims = data.get_list_victims(conn)
-            # Envoi de la réponse
-            message_response = message.set_message("LIST_VICTIM_RESP", {"victims": victims})
-            print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
-            network.send_message(client_socket, message_response)
-            print("Message envoyé")
-        elif type_message == "HISTORY_REQ":
+            for i in range(len(victims)):
+                victime = victims[i]
+                # Envoi de la réponse
+                message_response = message.set_message("LIST_VICTIM_RESP", victime)
+                print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
+                network.send_message(client_socket, message_response)
+                print("Message envoyé")
+                if i == len(victims)-1:
+                    message_response = message.set_message("LIST_VICTIM_END")
+                    print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
+                    network.send_message(client_socket, message_response)
+                    print("Message envoyé")
+        elif type_message == "HIST_REQ":
             # Récupérer l'historique
-            victim = msg1['victim']
+            victim = msg1['HIST_REQ']
             history = data.get_list_history(conn, victim)
             # Envoi de la réponse
-            message_response = message.set_message("HISTORY_RESP", {"victim": victim, "history": history})
+            message_response = message.set_message("HISTORY_RESP", history)
             print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
             network.send_message(client_socket, message_response)
             print("Message envoyé")

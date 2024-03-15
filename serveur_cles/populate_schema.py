@@ -1,65 +1,144 @@
 import string
 import random
-import time
-import sqlite3
-from datetime import datetime
+import hashlib, json, time
+
+from datetime import datetime, timedelta
 fake_victims = []
 fake_histories = {1: [], 2: [], 3: [], 4: []}
-# Supposons que le module utile.data contient des fonctions nécessaires
 from utile.data import connect_db, insert_data
 
-def simulate_key(length=0):
-    letters = ".éèàçùµ()[]" + string.ascii_letters + string.digits
-    return ''.join(random.choice(letters) for i in range(length))
+#respect format suivant :
+#table victims :
+    # id → int ; id du ransomware enregistré en DB du serveur de clés
+    # Os → string ;type de système victime "Windows" / "Linux" / "MacOS"
+    # hash → string ;256 lettres / chiffres (pour le SHA256)
+    # key → string ;512 caractères imprimables pour la clé de chiffrement
+    # disk → list ;['C:', 'D:',...]
 
-def simulate_hash(length=0):
-    letters = string.hexdigits
-    return ''.join(random.choice(letters) for i in range(length))
+#table states :
+    # id_states → int ;id de l'état
+    # id_victim → int ;id de la victime
+    # state → string ;« INITIALIZE » / « CRYPT » / « PENDING » / « DECRYPT » / « PROTECTED »
+    # datetime : timestamp → int ;nombre de seconde depuis le 01/01/1970 à 00:00:00
 
-def generate_fake_victims(num_victims):
-    for _ in range(num_victims):
-        os = simulate_key(10)
-        hash = simulate_hash(64)
-        disks = simulate_key(10)
-        key = simulate_key(32)
-        fake_victims.append((os, hash, disks, key))
+#table encrypted :
+    # id_encrypted → int ;id de l'état
+    # id_victim → int ;id de la victime
+    # datetime → int ;timestamp
+    # nb_files → int ;nombre de fichiers chiffrés
 
-def generate_fake_history(fake_histories, num_records, table_name):
-    for victim_id in range(1, len(fake_victims) + 1):
-        for _ in range(num_records):
-            datetime_entry = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            if table_name == 'states':
-                state = random.choice(['infected', 'decrypted'])
-                fake_histories[victim_id].append((victim_id, datetime_entry, state))
-            else:  # 'decrypted' or 'encrypted'
-                nb_files = random.randint(1, 100)
-                fake_histories[victim_id].append((victim_id, datetime_entry, nb_files))
+#table decrypted :
+    # id_decrypted → int ;id de l'état
+    # id_victim → int ;id de la victime
+    # datetime → int ;timestamp
+    # nb_files → int ;nombre de fichiers déchiffrés
+#_____________________________________________________
+    # frequency → int ;fréquence d'émission en seconde
+    # type → string ;type de système victime "WORKSTATION" / "SERVEUR"
+    # message → string ;message envoyé pour rapporter le statut de déchiffrement
+    # paths → list ;['\Users\*\Documents\*\', '\test\*\', '\temp\',...]
+    # file_ext → list ;['.jpg', '.png', '.docx', '.xlsx', '.pptx', '.pdf', '.pst', '.ost']
+
+def generer_victimes(n):
+    for _ in range(n):
+        os = random.choice(["Windows", "Linux", "MacOS"])
+        hash = hashlib.sha256(str(random.random()).encode()).hexdigest()
+        key = ''.join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=512))
+        disks = json.dumps(random.sample(['C:', 'D:', 'E:', 'F:'], k=random.randint(1, 4)))
+        yield (os, hash, disks, key)
+
+
+def generer_etats(id_victimes):
+    etats_possibles = [
+        "INITIALIZE",
+        "CRYPT",
+        "PENDING",
+        "DECRYPT",
+        "PROTECTED"
+    ]
+    for id_victim in id_victimes:
+        # Sélection aléatoire de 4 états uniques pour chaque victime.
+        etats_choisis = random.sample(etats_possibles, random.randint(1, 4))
+
+        etats = {
+            "INITIALIZE": 1,
+            "CRYPT": 2,
+            "PENDING": 3,
+            "DECRYPT": 4,
+            "PROTECTED": 5
+        }
+        for etat in etats_choisis:
+            id_state = etats[etat]
+            datetime_ = int(time.time())
+            yield (id_state, id_victim, datetime_, etat)
+            time.sleep(0.1)  # Pause pour s'assurer que les timestamps sont uniques.
+
+def generer_encrypted_decrypted(id_victimes):
+    for id_victim in id_victimes:
+        datetime_ = int(time.time())  # Timestamp actuel
+        nb_files = random.randint(1, 1000)  # Nombre de fichiers entre 1 et 1000
+        yield (id_victim, datetime_, nb_files)
+
+
+def inserer_victimes(conn, victimes):
+    for victime in victimes:
+        insert_data(conn, 'victims', ['os', 'hash', 'disks', 'key'], victime)
+
+
+def inserer_etats(conn, etats):
+    for etat in etats:
+        insert_data(conn, 'states', ['id_states', 'id_victim', 'datetime', 'state'], etat)
+
+
+
+
+def inserer_encrypted_decrypted(conn, donnees, table):
+    # Les colonnes auto-incrémentées ne doivent pas être incluses
+    items = ['id_victim', 'datetime', 'nb_files']
+
+    for donnee in donnees:
+        insert_data(conn, table, items, donnee)
+
+def recuperer_id_victimes(conn):
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_victim FROM victims")
+    return [row[0] for row in cursor.fetchall()]
+
+
+def recuperer_id_victimes_par_etat(conn, etat):
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_victim FROM states WHERE state = ?", (etat,))
+    return [row[0] for row in cursor.fetchall()]
+
+def generation_data_complet():
+    conn = connect_db()
+    # Génération et insertion des victimes
+    victimes = list(generer_victimes(10))
+    inserer_victimes(conn, victimes)
+
+
+    # Récupération des ID des victimes (comme précédemment)
+    id_victimes = recuperer_id_victimes(conn)
+    # Génération et insertion des états
+    etats = list(generer_etats(id_victimes))
+    inserer_etats(conn, etats)
+
+    # Après avoir inséré les états
+    id_victimes_crypt = recuperer_id_victimes_par_etat(conn, "CRYPT")
+    id_victimes_decrypt = recuperer_id_victimes_par_etat(conn, "DECRYPT")
+
+    # Génération et insertion pour encrypted et decrypted en utilisant ces listes filtrées d'ID
+    donnees_encrypted = list(generer_encrypted_decrypted(id_victimes_crypt))
+    donnees_decrypted = list(generer_encrypted_decrypted(id_victimes_decrypt))
+
+    inserer_encrypted_decrypted(conn, donnees_encrypted, "encrypted")
+    inserer_encrypted_decrypted(conn, donnees_decrypted, "decrypted")
+
+    print("Données insérées avec succès.")
+    conn.close()
 
 def main():
-    # Connexion à la base de données
-    conn = connect_db()
-
-    # Génération de données factices pour la table 'victims'
-    generate_fake_victims(4)  # Générer 4 victimes factices
-
-    # Insertion des données factices dans la table 'victims'
-    for victim in fake_victims:
-        insert_data(conn, 'victims', ['os', 'hash', 'disks', 'key'], victim)
-
-    # Génération et insertion des données factices pour les tables 'decrypted', 'states', 'encrypted'
-    for table_name in ['decrypted', 'states', 'encrypted']:
-        generate_fake_history(fake_histories, 5, table_name)  # Générer 5 enregistrements par victime
-
-        # Insertion des données factices dans la base de données
-        for victim_id, histories in fake_histories.items():
-            for history in histories:
-                if table_name == 'states':
-                    insert_data(conn, table_name, ['id_victim', 'datetime', 'state'], history)
-                else:  # 'decrypted' or 'encrypted'
-                    insert_data(conn, table_name, ['id_victim', 'datetime', 'nb_files'], history)
-
-    # Fermeture de la connexion à la base de données
-    conn.close()
+    generation_data_complet()
 
 if __name__ == '__main__':
     main()
