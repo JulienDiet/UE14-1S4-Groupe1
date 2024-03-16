@@ -13,10 +13,10 @@ LIST_VICTIM_END = {'LIST_END': None}
 # history messages
 HISTORY_REQ = {'HIST_REQ': None}
 HISTORY_RESP = {
-    'HIST_RESP': None,
+    'ID_STATES': None,
+    'ID_VICTIM': None,
     'TIMESTAMP': None,
-    'STATE': None,
-    'NB_FILES': None
+    'STATE': None
 }
 HISTORY_END = {'HIST_END': None}
 
@@ -60,6 +60,8 @@ def set_message(select_msg, params=None):
         'CHANGE_STATE': CHANGE_STATE,
     }
     msg = messages[select_msg]
+    if msg is None:
+        raise ValueError(f"Le message {select_msg} n'existe pas.")
     if params is not None:
         keys = list(msg.keys())
         for i, param in enumerate(params):
