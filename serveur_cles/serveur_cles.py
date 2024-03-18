@@ -55,14 +55,25 @@ def main():
                     print("Message envoyé")
         elif type_message == "HIST_REQ":
             # Récupérer l'historique
-            victim = msg1['HIST_REQ']
+            victim = network.receive_message(client_socket)
             history = data.get_list_history(conn, victim)
-            # Envoi de la réponse
+
+            for i in range(len(history)):
+                message_response = message.set_message("HISTORY_RESP", history[i])
+                print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
+                network.send_message(client_socket, message_response)
+                print("Message envoyé")
+                if i == len(history)-1:
+                    message_response = message.set_message("HISTORY_END")
+                    print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
+                    network.send_message(client_socket, message_response)
+                    print("Message envoyé")
+            '''# Envoi de la réponse
             message_response = message.set_message("HISTORY_RESP", history)
             print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
             network.send_message(client_socket, message_response)
             print("Message envoyé")
-
+'''
         else:
             print("Aucun message à envoyer.")
         client_socket.close()
