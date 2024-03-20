@@ -49,29 +49,30 @@ def generer_victimes(n):
 
 
 def generer_etats(id_victimes):
-    etats_possibles = [
+    # Mise à jour de la liste pour s'arrêter à 'PENDING'
+    etats_progressifs = [
         "INITIALIZE",
         "CRYPT",
-        "PENDING",
-        "DECRYPT",
-        "PROTECTED"
+        "PENDING"
     ]
     for id_victim in id_victimes:
-        # Sélection aléatoire de 4 états uniques pour chaque victime.
-        etats_choisis = random.sample(etats_possibles, random.randint(1, 4))
+        # Initialisation du timestamp de départ pour la séquence
+        datetime_debut = int(time.time())
 
-        etats = {
-            "INITIALIZE": 1,
-            "CRYPT": 2,
-            "PENDING": 3,
-            "DECRYPT": 4,
-            "PROTECTED": 5
-        }
-        for etat in etats_choisis:
+        for etat in etats_progressifs:
+            etats = {
+                "INITIALIZE": 1,
+                "CRYPT": 2,
+                "PENDING": 3
+            }
             id_state = etats[etat]
-            datetime_ = int(time.time())
+            # Générer le timestamp pour chaque état, en incrémentant pour simuler le passage du temps
+            datetime_ = datetime_debut
             yield (id_state, id_victim, datetime_, etat)
-            time.sleep(0.1)  # Pause pour s'assurer que les timestamps sont uniques.
+
+            # Incrémenter le timestamp de départ pour le prochain état
+            # Cet incrément reflète le temps passé entre les états
+            datetime_debut += 1034
 
 def generer_encrypted_decrypted(id_victimes):
     for id_victim in id_victimes:

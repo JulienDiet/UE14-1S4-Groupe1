@@ -25,7 +25,7 @@ CHANGE_STATE = {
     'CHGSTATE': None,
     'STATE': 'DECRYPT'
 }
-
+STOP_SERVER = {'STOP_SERVER': None}
 # initialize message
 INITIALIZE_REQ = {}
 INITIALIZE_KEY = {}
@@ -39,7 +39,8 @@ MESSAGE_TYPE = {
     'HIST_REQ': HISTORY_REQ,
     'HIST_RESP': HISTORY_RESP,
     'HIST_END': HISTORY_END,
-    'CHGSTATE': CHANGE_STATE
+    'CHGSTATE': CHANGE_STATE,
+    'STOP_SERV': STOP_SERVER,
 }
 
 
@@ -58,6 +59,7 @@ def set_message(select_msg, params=None):
         'HISTORY_RESP': HISTORY_RESP,
         'HISTORY_END': HISTORY_END,
         'CHANGE_STATE': CHANGE_STATE,
+        'STOP_SERVER': STOP_SERVER,
     }
     msg = messages[select_msg]
     if msg is None:
