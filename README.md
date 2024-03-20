@@ -4,9 +4,15 @@
 
 ## Clone project on you laptop
 
+## HTTPS
 ```
-git clone https://git.helmo.be/p200040/ue14-labo.git
+https://github.com/JulienDiet/UE14-1S4-Groupe1.git
 ```
+## SSH
+```
+git@github.com:JulienDiet/UE14-1S4-Groupe1.git
+```
+
 
 ## Rename project as require
 
@@ -22,13 +28,16 @@ Bottom right -> Add New Interpreter
 git branch -m "YourName"
 ```
 
-## Valid and push you work
+## Run this before testing
+
+Execute create_schema.py -> create the database
+
+Execute populate_schema.py -> fill the database with working data
+
+## Required modules
 
 ```
-git pull
-git add .
-git commit -m "Your message"
-git push
+pip install pycryptodomex
 ```
 
 ## Don't hesitate to ask questions !
