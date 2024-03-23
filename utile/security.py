@@ -73,14 +73,3 @@ def diffie_hellman_recv_key(s_serveur):
     network.send_message(s_serveur, {'B': bob})
     key = pow(alice['A'], b, prime)
     return sha256(key.to_bytes(32, 'big')).digest()
-
-
-key_test = gen_key()
-print(key_test)
-msg_test = {'test': 'test',
-            'je': 'suis',
-            'pas': 'bien'}
-msg_encrypted = aes_encrypt(msg_test, key_test)
-print(msg_encrypted)
-msg_decrypted = aes_decrypt(msg_encrypted, key_test)
-print(msg_decrypted)
