@@ -4,7 +4,7 @@ import time
 # Constantes
 HEADERSIZE = 10
 LOCAL_IP = socket.gethostname()
-PORT_SERV_CLES = 8381
+PORT_SERV_CLES = 8380
 
 
 def start_net_serv(ip=LOCAL_IP, port=PORT_SERV_CLES):

