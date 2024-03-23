@@ -63,8 +63,9 @@ def main():
         # Traiter le message reçu de type HIST_REQ
         elif type_message == "HIST_REQ":
             #Decryptage de encrypted_id
-            encrypted_id = network.receive_message(client_socket)
-            victim_id = security.aes_decrypt(encrypted_id, key)
+            #encrypted_id = network.receive_message(client_socket)
+            #victim_id = security.aes_decrypt(encrypted_id, key)
+            victim_id = message_console["HIST_REQ"]
             # Récupérer l'historique en fonction de l'id de la victime
             history = data.get_list_history(conn, victim_id)
             # Envoi de la réponse de type HISTORY_RESP (pour chaque élément de l'historique)
@@ -82,8 +83,9 @@ def main():
         # Traiter le message reçu de type CHGSTATE
         elif type_message == "CHGSTATE":
             #Decryptage de l'id de la victime
-            encrypted_id = network.receive_message(client_socket)
-            victim_id = security.aes_decrypt(encrypted_id, key)
+            #encrypted_id = network.receive_message(client_socket)
+            #victim_id = security.aes_decrypt(encrypted_id, key)
+            victim_id = message_console["CHGSTATE"]
             # récupérer l'état actuel en fonction de l'id de la victime
             history = data.get_list_history(conn, victim_id)
             if len(history) > 0:
