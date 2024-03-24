@@ -37,7 +37,7 @@ Execute populate_schema.py -> fill the database with working data
 ## Required modules
 
 ```
-pip install pycryptodomex
+pip install pycryptodome
 ```
 
 ## Don't hesitate to ask questions !
