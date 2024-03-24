@@ -78,7 +78,7 @@ def get_message_type(message):
     :param message: le dictionnaire représentant le message
     :return: une chaine correspondant au nom du message comme définit par le protocole
     """
+    #je souhaite comparer une chaine de caractère a la clé d'un dictionnaire
     for key, value in MESSAGE_TYPE.items():
-        if message == value:
+        if set(value.keys()) == set(message.keys()):
             return key
-    return None

