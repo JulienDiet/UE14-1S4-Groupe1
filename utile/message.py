@@ -4,6 +4,7 @@ LIST_VICTIM_REQ = {'LIST_REQ': None}
 LIST_VICTIM_RESP = {
     'LIST_RESP': None,
     'ID': None,
+    'Hash': None,
     'OS': None,
     'DISKS': None,
     'STATE': None,
