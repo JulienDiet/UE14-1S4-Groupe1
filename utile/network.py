@@ -79,18 +79,28 @@ def receive_message(s):
     :return: (objet) réceptionné
     """
     try:
-        # Recevoir d'abord la longueur du message
-        msg_length_header = s.recv(HEADERSIZE)
-
-        if not msg_length_header:
-            # Si la longueur du message n'est pas reçue, cela signifie que la connexion a été fermée
-            return None
+        # Recevoir le header de la longueur du message
+        msg_length_header = b''
+        # Tant que le header reçu est vide ou de longueur inférieure à la taille fixée, continue de recevoir
+        while len(msg_length_header) < HEADERSIZE:
+            chunk = s.recv(HEADERSIZE - len(msg_length_header))
+            if not chunk:
+                # Si la connexion est fermée avant de recevoir le header complet, retourner None
+                return None
+            msg_length_header += chunk
 
         # Convertir l'en-tête de la longueur du message en un entier
         msg_length = int(msg_length_header.decode('utf-8').strip())
 
         # Recevoir le message réel en fonction de la longueur précédemment reçue
-        msg = s.recv(msg_length)
+        msg = b''
+        # Tant que le message reçu est vide ou de longueur inférieure à la taille du message attendu, continue de recevoir
+        while len(msg) < msg_length:
+            chunk = s.recv(min(msg_length - len(msg), 2048))  # Recevoir par morceaux, maximum 2048 octets à la fois
+            if not chunk:
+                # Si la connexion est fermée avant de recevoir le message complet, retourner None
+                return None
+            msg += chunk
 
         # Convertir le message en objet (dans ce cas, en dictionnaire)
         msg_dict = eval(msg.decode('utf-8'))
@@ -99,5 +109,6 @@ def receive_message(s):
     except Exception as e:
         print(f"Erreur lors de la réception du message : {e}")
         return None
+
 
 
