@@ -100,20 +100,16 @@ def get_list_history(conn, id_victim):
     # Définir la requête SELECT pour récupérer l'historique de la victime spécifiée
     # Assurez-vous que la table et les colonnes correspondent à votre schéma de base de données
     # Par exemple, récupérer des informations depuis une table 'history' où 'victim_id' correspond à id_victim
-    select_query = f"SELECT * FROM states WHERE id_victim = ?"
+    select_query_history = f"SELECT * FROM states WHERE id_victim = {id_victim};"
 
-    try:
-        # Créer un objet curseur en utilisant la connexion
-        cur = conn.cursor()
-        # Exécuter la requête SELECT avec le paramètre id_victim pour filtrer les résultats
-        cur.execute(select_query, (id_victim,))
-        # Récupérer tous les résultats
-        history_records = cur.fetchall()
-        print("Historique récupéré avec succès.")
-        # Retourner les enregistrements récupérés
+    # Utiliser la fonction select_data pour exécuter la requête
+    history_records = select_data(conn, select_query_history)
+
+    if history_records is not None:
+        print("Historique récupéré avec succès😀.")
         return history_records
-    except sqlite3.Error as e:
-        print(f"Une erreur s'est produite lors de l'exécution de la requête SELECT : {e}")
+    else:
+        print("Impossible de récupérer l'historique.")
         return []
 
 
