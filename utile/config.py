@@ -36,10 +36,10 @@ def save_config(config_file='config/config.cfg', key_file='config/key.bin'):
     :return: néant
     """
     global config
-    key = security
+    key = security.gen_key()
     try:
         with open(key_file, 'wb') as f:
-            f.write(security.gen_key())
+            f.write(key)
         with open(config_file, 'wb') as f:
             pickle.dump(security.aes_encrypt(config, key), f)
     except Exception as e:
