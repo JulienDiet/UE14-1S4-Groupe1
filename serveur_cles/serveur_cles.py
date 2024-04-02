@@ -71,7 +71,6 @@ def main():
             # Envoi de la réponse de type HISTORY_RESP (pour chaque élément de l'historique)
             for i in range(len(history)):
                 message_response = message.set_message("HIST_RESP", history[i])
-                print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                 network.send_message(client_socket, message_response)
                 print("Message envoyé")
                 # Envoi de la réponse de type HISTORY_END
