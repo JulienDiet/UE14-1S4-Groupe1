@@ -73,19 +73,7 @@ def set_message(select_msg, params=None):
     :param params: les éventuels paramètres à ajouter au message
     :return: le message sous forme de dictionnaire
     """
-    messages = {
-        'LIST_VICTIM_REQ': LIST_VICTIM_REQ,
-        'LIST_VICTIM_RESP': LIST_VICTIM_RESP,
-        'LIST_VICTIM_END': LIST_VICTIM_END,
-        'HISTORY_REQ': HISTORY_REQ,
-        'HISTORY_RESP': HISTORY_RESP,
-        'HISTORY_END': HISTORY_END,
-        'CHANGE_STATE': CHANGE_STATE,
-        'INITIALIZE_REQ': INITIALIZE_REQ,
-        'INITIALIZE_KEY': INITIALIZE_KEY,
-        'INITIALIZE_RESP': INITIALIZE_RESP
-    }
-    msg = messages[select_msg]
+    msg = MESSAGE_TYPE[select_msg]
     if msg == INITIALIZE_RESP:
         msg['CONFIGURE'] = params[0]
         keys_settings = list(msg['SETTINGS'].keys())
