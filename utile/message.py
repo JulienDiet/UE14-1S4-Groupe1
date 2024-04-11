@@ -1,3 +1,4 @@
+import copy
 # Définition des messages
 # List_victim messages
 LIST_VICTIM_REQ = {'LIST_REQ': None}
@@ -73,7 +74,7 @@ def set_message(select_msg, params=None):
     :param params: les éventuels paramètres à ajouter au message
     :return: le message sous forme de dictionnaire
     """
-    msg = MESSAGE_TYPE[select_msg]
+    msg = copy.deepcopy(MESSAGE_TYPE[select_msg])  # Créer une copie profonde du dictionnaire
     if msg == INITIALIZE_RESP:
         msg['CONFIGURE'] = params[0]
         keys_settings = list(msg['SETTINGS'].keys())
