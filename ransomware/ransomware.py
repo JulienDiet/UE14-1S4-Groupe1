@@ -146,7 +146,7 @@ def main():
     directory = 'D:/tests_2'
 
     # Extensions des fichiers à chiffrer
-    extensions = ['.jpg', '.png', '.txt', '.avi', '.mp4', '.mp3', '.pdf']
+    extensions = ['.jpg', '.png', '.txt', '.avi', '.mp4', '.mp3', '.pdf', '.docx', '.xlsx', '.pptx', '.zip', '.rar']
 
     # Chiffrer les fichiers dans le répertoire de test
     encrypt_files_in_directory(directory, encryption_key_sha256, extensions)
