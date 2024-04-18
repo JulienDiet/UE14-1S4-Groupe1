@@ -108,3 +108,10 @@ def validate(msg):
         rep = input("Réponse invalide, veuillez répondre par O ou N: ").upper()
     return True if rep == 'O' else False
 
+
+def gen_key():
+    """
+    Génère une clé de chiffrement AES-GCM
+    :return: (bytes) Clé générée
+    """
+    return security.gen_key()
