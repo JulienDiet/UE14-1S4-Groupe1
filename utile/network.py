@@ -23,8 +23,6 @@ def start_net_serv(ip=LOCAL_IP, port=PORT_SERV_CLES):
     return server_socket
 
 
-
-
 def connect_to_serv(ip=LOCAL_IP, port=PORT_SERV_CLES, retry=10):
     """
     Crée un socket qui tente de se connecter sur ip:port.
@@ -109,6 +107,3 @@ def receive_message(s):
     except Exception as e:
         print(f"Erreur lors de la réception du message : {e}")
         return None
-
-
-
