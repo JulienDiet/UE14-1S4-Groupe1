@@ -100,9 +100,13 @@ def get_data_from_db(message_console, conn):
             print(items_state)
             contenu_state = [1, i + 1, datetime.datetime.now().timestamp(), "INITIALIZE"]
             data.insert_data(conn, "states", items_state, contenu_state)
+
+
+
             message_response = message.set_message("KEY_RESP", [hash_victim, key, "INITIALIZE"])
+            print("message_response", message_response)
             front_thread_queue.put(message_response)
-            print("Coucou")
+            print("Coucou c envoyé")
     else:
         message_response = message.set_message("CHGSTATE", ["UNKNOWN"])
         console_thread_queue.put(message_response)

