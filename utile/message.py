@@ -76,7 +76,7 @@ def set_message(select_msg, params=None):
     """
     msg = copy.deepcopy(MESSAGE_TYPE[select_msg])  # Créer une copie profonde du dictionnaire
     if msg == INITIALIZE_RESP:
-        msg['CONFIGURE'] = params[0]
+        msg['CONFIGURE'] = params[0] #PROBLEME ICI
         keys_settings = list(msg['SETTINGS'].keys())
         for i, param in enumerate(keys_settings):
             if i + 1 < len(params):
