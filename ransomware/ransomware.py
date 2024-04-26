@@ -7,7 +7,7 @@ import utile.config as config
 import platform
 import hashlib
 import datetime
-
+#e
 
 KEY_FILE_PATH = 'encryption_key.bin'  # Chemin du fichier pour stocker la clé de chiffrement
 PATH_CONFIG = 'config_workstation.ini'  # Chemin du fichier de configuration
@@ -23,7 +23,7 @@ CONFIG_WORKSTATION = {
     'FILE_EXT': ['.jpg', '.png', '.txt', '.avi', '.mp4', '.mp3', '.pdf'],
     'FREQ': None,
     'TYPE': None,
-    'OS': None,
+    'OS': "Workstation",
     'STATE': None,
 }
 def affichage_ransomware():

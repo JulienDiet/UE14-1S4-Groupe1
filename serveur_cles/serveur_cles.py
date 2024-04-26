@@ -150,7 +150,7 @@ def handle_frontal(socket_server_frontal):
         print(client_socket, address)
         key = security.diffie_hellman_recv_key(client_socket)
         encrypted_message_frontal = network.receive_message(client_socket)
-        print("hello oibeoi")
+        print("hello ii")
         if encrypted_message_frontal is not None:
             message_frontal = security.aes_decrypt(encrypted_message_frontal, key)
             main_queue.put((message_frontal, client_socket, key))
