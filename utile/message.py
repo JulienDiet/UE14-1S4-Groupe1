@@ -51,6 +51,30 @@ INITIALIZE_RESP = {
         'STATE': None
     }
 }
+# pending signal
+PENDING = {
+    'PENDING_SIGNAL': None,
+    'NB_FILES': None
+}
+# Decrypt message
+DECRYPT_REQ = {
+    'DECRYPT': None,
+    'NB_FILES': None,
+    'KEY': None
+}
+# Protected messages
+PROTECTED_REQ = {
+    'PROTECTREQ': None,
+    'NB_FILES': None
+}
+COUNT_CRYPTED = {
+    'COUNT': None,
+    'NB_FILES': None
+}
+PROTECTED_RESP = {
+    'PROTECTRESP': None,
+    'MESSAGE': None
+}
 
 # message_type
 MESSAGE_TYPE = {
@@ -63,7 +87,12 @@ MESSAGE_TYPE = {
     'CHGSTATE': CHANGE_STATE,
     'INITIALIZE': INITIALIZE_REQ,
     'KEY_RESP': INITIALIZE_KEY,
-    'CONFIGURE': INITIALIZE_RESP
+    'CONFIGURE': INITIALIZE_RESP,
+    'PENDING_SIGNAL': PENDING,
+    'DECRYPT': DECRYPT_REQ,
+    'PROTECTREQ': PROTECTED_REQ,
+    'COUNT': COUNT_CRYPTED,
+    'PROTECTRESP': PROTECTED_RESP
 }
 
 

