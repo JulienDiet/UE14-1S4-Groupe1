@@ -118,7 +118,7 @@ def get_list_history(conn, id_victim):
     history_records = select_data(conn, select_query_history)
 
     if history_records is not None:
-        print("Historique récupéré avec succès😀.")
+        print("Historique récupéré avec succès.")
         return history_records
     else:
         print("Impossible de récupérer l'historique.")

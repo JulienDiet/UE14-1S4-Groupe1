@@ -3,7 +3,6 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 import utile.network as network
 import utile.message as message
-import utile.config as config
 import platform
 import hashlib
 import datetime

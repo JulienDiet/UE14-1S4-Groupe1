@@ -1,11 +1,11 @@
-import string
 import random
 import hashlib, json, time
+from utile.data import connect_db, insert_data
 
-from datetime import datetime, timedelta
+
 fake_victims = []
 fake_histories = {1: [], 2: [], 3: [], 4: []}
-from utile.data import connect_db, insert_data
+
 
 #respect format suivant :
 #table victims :
